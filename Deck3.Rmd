@@ -1,0 +1,255 @@
+---
+title: "Intro to Statistical Power for Randomized Trials"
+subtitle: "Deck 3: Independent samples t-test with covariates (ANCOVA)"
+author: "Eric Hedberg, PhD"
+output: 
+  ioslides_presentation: 
+    fig_retina: null
+    highlight: pygments
+    incremental: yes
+    smart: no
+    transition: faster
+    widescreen: yes
+runtime: shiny
+---
+
+```{r, include=FALSE}
+source("functions.R")
+```
+
+# Covariates
+
+## Analysis of Covariance (ANCOVA)
+
+ANCOVA is like ANOVA, except it includes a covariate to explain away variation in the outcome. This reduces the error variance ($\sigma^2$) proportional to $\left(1-\rho_{yx,w}^2\right)$ which makes the test larger.
+
+$$ \lambda = \frac{(\bar{y}_1 - \bar{y}_0)}{\sqrt{\hat{\sigma}^2\frac{2}{n}}}\sqrt{ \frac{1}{\left(1-\rho_{yx}^2\right)}}$$
+$\rho_{yx}$ is the population correlation between the outcome and covariate, the larger $\rho_{yx}$ is, smaller $\sigma^2$ will be 
+
+From a regression point of view, ANCOVA is simply a regression that uses a dummy variable for treatment ($T$) and adds a control variable ($x$).
+
+$$ y_i = \gamma_0 + \gamma_1 T_i + \gamma_2 x_i + \epsilon_i $$
+
+## Random assignment (or really good matching)
+
+While a covariate will always decrease the error variance, it will not always help if it is correlated with the treatment indicator. 
+
+$$cov(T,x) \ne 0 \mbox{   is bad} $$
+This is for two reasons. 
+
+## Reason 1 that cov(T,x) is bad
+
+Suppose $\phi_1$ is the population slope for $x$ predicting $y$, the estimate of the difference between the groups' averages becomes
+
+$$\hat{\gamma}_1 = \left(\bar{y}_1-\bar{y}_0\right) - \phi_1\left(\bar{x}_1-\bar{x}_0\right)$$
+which is the raw difference in means ($\bar{y}_1-\bar{y}_0$) minus $\phi_1$ times the imbalance in the covariate between treatment and control ($\bar{x}_1-\bar{x}_0$). 
+
+When the mean of $x$ is the same for treatment and control, $\hat{\gamma}_1 = \left(\bar{y}_1-\bar{y}_0\right)$, if not, and $x$ is correlated with the outcome, the effect size drops.
+
+It is bad when there is a lot of imbalance, its worse when the covariate is also really correlated with the outcome
+
+So a pretest that is highly correlated with the outcome AND imbalanced will derail your study 
+
+## Reason 2 that cov(T,x) is bad
+
+The variance of the treatment effect will increase proportional to $\frac{1}{1-\rho_{Tx}^2}$, which is known as the variance inflation factor (VIF)
+
+That is, in multivariate regression, the standard errors inflate proportional to the correlations among the predictors. 
+
+Thus, not only will your effect drop, so too will your standard error get higher!
+
+
+## How to avoid cov(T,x)
+
+1) The best method to avoid any correlation between $T$ and $x$ is to make $T$ exogenous through random assignment. 
+
+In other words, if you randomly assign $T$, it will not be highly correlated with _anything_.
+
+2) Matching is next best...but there is no way to avoid some correlation because of spurious relationships with unobserved variables. 
+
+## Test statistics
+
+The _expected_ test statistic for ANCOVA, and the $\lambda$ to use in power is
+
+$$ \lambda = \underbrace{\frac{\left(\mu_1-\mu_0\right) - \phi_1\left(\bar{x}_1-\bar{x}_0\right)}{\sigma}}_\text{Adjusted Effect size}\underbrace{\sqrt{\frac{n}{2}\frac{2n-3}{2n-2}}}_\text{Sample size}\underbrace{\sqrt{1-\rho_{Tx}^2}}_\text{Multicolinearity}\underbrace{\sqrt{\frac{1}{\left(1-\rho_{yx}^2\right)}}}_\text{Covariate effect} $$
+but if there is no correlation between treatment and the covariate, $\mu_1-\mu_0 = 0$ and $\rho_{Tx} = 0$, we can work with 
+
+$$ \lambda = \underbrace{\frac{\left(\mu_1-\mu_0\right)}{\sigma}}_\text{Effect size}\underbrace{\sqrt{\frac{n}{2}\frac{2n-3}{2n-2}}}_\text{Sample size}\underbrace{\sqrt{\frac{1}{\left(1-\rho_{yx}^2\right)}}}_\text{Covariate effect}$$
+
+## Finding power 
+
+We now have a new parameter, $\rho_{yx}$ to add to our power computations. The game is the same, find $\beta$
+
+$$ \beta = \underbrace{H\left[t_{(df)1-\frac{\alpha}{2}},df,\lambda\right]}_\text{Area before right critical value}-\underbrace{H\left[t_{(df)\frac{\alpha}{2}},df,\lambda\right]}_\text{Area before left critical value} $$
+Except now, the formula for $\lambda$ is different
+
+$$ \lambda = \delta\sqrt{\frac{n}{2}\frac{2n-3}{2n-2}}\sqrt{\frac{1}{\left(1-\rho_{yx}^2\right)}} $$
+
+and the degrees of freedom are one less, $df = 2\times n - 2 - 1$
+
+## Computing power example (uncorrelated covariate) I
+
+Suppose we thought the effect size was going to be $\delta = .25$ and we wanted the power for a sample size of 20 per group ($n = 20$), for a two-tailed test with $\alpha = 0.05$, and we expected to have a covariate correlated with the outcome ($\rho_{yx} = 0.8$) 
+
+First, we need the degrees of freedom and to set `alpha`
+
+```{r}
+n <- 20
+df <- 2*n-2-1
+alpha <- .05
+```
+
+## Computing power example (uncorrelated covariate) II
+
+Next, we set $\delta=$ `delta`, $\rho_{yx}=$ `rho.yx`,calculate $\lambda=$ `lambda`, and use `pt` with as the $H$ function, and using `qt` to get the critical values
+```{r }
+delta <- .25
+rho.yx <- .8
+lambda <- delta*sqrt(n/2*(2*n-3)/(2*n-2))*sqrt(1/(1-rho.yx^2))
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Computing power example (uncorrelated covariate) III
+
+here is the whole program
+
+```{r}
+n <- 20
+df <- 2*n-2-1
+alpha <- .05
+delta <- .25
+rho.yx <- .8
+lambda <- delta*sqrt(n/2*(2*n-3)/(2*n-2))*sqrt(1/(1-rho.yx^2))
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Adding $\rho_{yx}$ to the power calculator
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.1", label = "Number per group (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  
+  sliderInput("es.1", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("ryx.1", label = "Correlation between outcome and covariate (ryx)",
+              min = -.9, max = .9, value = 0, step = 0.1)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.1, 
+                 n = input$n.1, 
+                 cov = "Yes",
+                 ryx = input$ryx.1,
+                 marklambda = TRUE)
+}, width = 1000, height = 300)
+```
+
+## Needed sample size for t-tests with covariates
+
+Recall that for the normal distribution, the useful relationship a function of the critical value. We can use the same strategy of rearrangement* 
+
+$$ n_z \approx \frac{2(z_{critical}-z_{\beta})^2\left(1-\rho_{yx}^2\right)}{\delta^2} $$ 
+
+Again, we can use the result from a normal approximation ($n_z$) as a start, then use that answer for the $df$ in a similar formula
+
+$$ n \approx \frac{2\left(t_{(2n_z-2-1)critical}-t_{(2n_z-2-1)\beta}\right)^2\left(1-\rho_{yx}^2\right)}{\delta^2} $$
+
+*note: $1 > \sqrt{(2n-3)/(2n-2)} > .95$ if $n \ge 6$, so we can ignore it to isolate a value for $n$
+
+## Sample size example (uncorrelated covariate) I
+
+Suppose we thought the effect size was going to be $\delta = .5$ and we wanted the sample size for power of 0.8 ($\beta = 0.2$), for a two-tailed test with $\alpha = 0.05$ and we expected to have a covariate correlated with the outcome ($\rho_{yx} = 0.5$). We start with the normal approximation 
+
+```{r }
+delta <- .5
+alpha <- .05
+power <- .8
+rho.yx <- .5
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+n.z <- 2*(z.crit-z.beta)^2*(1-rho.yx^2)/delta^2
+n.z
+```
+
+## Sample size example (uncorrelated covariate) II
+
+Next, we calculate `df` using a rounded-up value of `n.z`, and use it in the `qt` function
+
+```{r}
+df <- 2*ceiling(n.z) - 2 - 1
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+n <- 2*(t.crit-t.beta)^2*(1-rho.yx^2)/delta^2
+n
+```
+
+## Sample size example (uncorrelated covariate) III
+
+Here is the complete program 
+
+```{r}
+delta <- .5
+alpha <- .05
+power <- .8
+rho.yx <- .5
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+n.z <- 2*(z.crit-z.beta)^2*(1-rho.yx^2)/delta^2
+df <- 2*ceiling(n.z) - 2 -1
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+n <- 2*(t.crit-t.beta)^2*(1-rho.yx^2)/delta^2
+n
+```
+
+## Minimum detectable effect size (MDES, uncorrelated covariate)
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \delta_m \approx \sqrt{\frac{2}{n}\frac{2n-2}{2n-3}}\left(1-\rho_{yx}^2\right)\left(t_{(2n-2)critical}-t_{(2n-2)\beta}\right) $$ 
+
+and since we are already planning on a sample size, we know the $df$, so no further approximation is necessary
+
+## MDES example (t uncorrelated covariate)
+
+Suppose we knew that we had 20 cases per group ($df = 2\times20-2-1=37$) and we wanted the minimum effect size for power of 0.8 ($\beta = 0.2$), for a two-tailed test with $\alpha = 0.05$ and we expected to have a covariate correlated with the outcome ($\rho_{yx} = 0.5$) 
+
+```{r }
+n <- 20
+df <- 2*n-2-1
+alpha <- .05
+power <- .8
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+delta.m <- sqrt(2/n*(2*n-2)/(2*n-3))*(1-rho.yx^2)*(t.crit-t.beta)
+delta.m
+```
+
+## Explore!
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.2", label = "Number per group (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  
+  sliderInput("es.2", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("ryx.2", label = "Correlation between outcome and covariate (ryx)",
+              min = -.9, max = .9, value = 0, step = 0.1)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.2, 
+                 n = input$n.2, 
+                 cov = "Yes",
+                 ryx = input$ryx.2,
+                 marklambda = TRUE)
+}, width = 1000, height = 300)
+```
+
+

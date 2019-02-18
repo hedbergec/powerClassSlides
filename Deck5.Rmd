@@ -1,0 +1,463 @@
+---
+title: "Intro to Statistical Power for Randomized Trials"
+subtitle: "Deck 5: Multisite randomized trials"
+author: "Eric Hedberg, PhD"
+output: 
+  ioslides_presentation: 
+    fig_retina: null
+    highlight: pygments
+    incremental: yes
+    smart: no
+    transition: faster
+    widescreen: yes
+runtime: shiny
+---
+
+```{r, include=FALSE}
+source("functions.R")
+```
+
+## Many little experiments
+
+In contrast to randomizing clusters, another choice with two-level designs is to randomize units within clusters. 
+
+This essentially means that each cluster, or "site," becomes its own small trial. 
+
+This allows researchers to estimate how treatment effects vary across sites. 
+
+So-called multisite randomized trials are also popular in social and health experiments.
+
+The sample breakdown is this: we have $j = \{1,2\}$ treatments, each with $i = \{1,2,\dots n\}$ units assigned to them within each cluster, and each set of units is assigned to $k = \{1,2,\dots m\}$ clusters (sites). 
+
+## Multisite randomized trials (mixed notation)
+
+As with cluster randomized trials, we can estimate a mixed model to perform the analysis to test the treatment effect. 
+
+The regression model in mixed notation is as follows. The outcome for the $i^{th}$ unit assigned to treatment group $j$ in cluster $k$, $y_{ijk}$, is modeled as a function of a treatment indicator ($T$), a random effect for the cluster $b_{k}$, a random effect of the treatment effect $\left(Tb\right)_{jk}$, and a within-group residual, $e_{ijk}$
+$$	y_{ijk} = \gamma_0 + \gamma_1 T_{ijk} + b_{k} + \left(Tb\right)_{jk}+e_{ijk} $$
+
+## Multisite randomized trials (HLM notation)
+
+Exactly how the interaction works and what it means can be better understood with HLM notation. Using HLM notation, we can posit a "level-1" model where the outcome is a function of a cluster-specific control group mean, $\pi_{0k}$, a cluster-specific treatment effect, $\pi_{1k}$, and a within-cluster residual $e_{ijk}$
+$$	y_{ijk} = \pi_{0k} + \pi_{1k} T_{ijk}+e_{ijk} $$
+
+## HLM notation for multisite randomized trials (I)
+
+Exactly how the interaction works and what it means can be better understood with HLM notation. Using HLM notation, we can posit a "level-1" model where the outcome is a function of a cluster-specific control group mean, $\pi_{0k}$, a cluster-specific treatment effect, $\pi_{1k}$, and a within-cluster residual $e_{ijk}$
+
+$$	y_{ijk} = \pi_{0k} + \pi_{1k} T_{ijk}+e_{ijk} $$
+
+## HLM notation for multisite randomized trials (II)
+
+Next, we have two "level-2" models. The cluster-specific control group mean is a function of the average of cluster control group means plus a cluster-specific random effect 
+
+$$\pi_{0k} = \gamma_{00} + b_{0k},$$
+
+and similarly, the cluster specific treatment effect is a function of an average of the cluster-specific treatment effects 
+$$	\pi_{1k} = \gamma_{10} + b_{1k}$$
+
+## From HLM to mixed
+
+We can put it all together to get to the mixed model, if 
+
+* $y_{ijk} = \pi_{0k} + \pi_{1k} + T_{ijk} + e_{ijk}$, 
+* $\pi_{0k} = \gamma_{00} + b_{0k}$, and 
+* $\pi_{1k} = \gamma_{10} + b_{1k}$, then
+
+$$y_{ijk} = \gamma_{00} + b_{0k} + \left(\gamma_{10} + b_{1k}\right) T_{ijk}+e_{ijk}$$
+
+so
+
+$$ y_{ijk} = \gamma_{00} + \gamma_{10}T_{ijk} + b_{0k} + b_{1k}T_{ijk}+e_{ijk} $$
+
+similar to the mixed model
+
+$$	y_{ijk} = \gamma_0 + \gamma_1 T_{ijk} + b_{k} + \left(Tb\right)_{jk}+e_{ijk} $$
+
+
+## Sources of variance
+
+Again, the variance of the random effects are the estimated variance components. 
+
+* The random effect $e_{ik(j)}$ is distributed normal with a mean of zero and standard deviation $\sigma_e$, 
+* the random effect $b_{k}$ is distributed normal with a mean of zero and standard deviation $\sigma_b$, and 
+* the random effect $\left(Tb\right)_{jk}$ is distributed normal with a mean of zero and standard deviation $\sigma_{\tau b}$.
+
+$$	y_{ijk} = \gamma_0 + \gamma_1 T_{ijk} + b_{k} + \left(Tb\right)_{jk}+e_{ijk} $$
+
+## The t-test for multisite randomized trials (no covariates)
+
+Here is the test, (note that we don't even use the cluster intercept variance)
+
+$$ t = \left(\mu_1-\mu_0\right)\sqrt{\frac{nm}{2\left(\sigma_e^2+\frac{n}{2}\sigma_{\tau b}^2\right)}} $$
+
+However, we do use the cluster level variance to create the scale free parameters. 
+
+## With scale-free parameters
+
+We first work with the difference to create an effect size that employs the total variance, $\delta_b = \frac{\left(\mu_1-\mu_0\right)}{\sigma_b}=\frac{\delta}{\sqrt{\rho_{intra}}}$. 
+
+Next we standardize the treatment variance using the between-cluster mean variance $\upsilon=\frac{\sigma_{\tau b}^2}{\sigma_b^2}$
+
+With these, get the _expected_ test with $df = m - 1$
+
+$$\lambda = \underbrace{\delta}_\text{Effect size}\underbrace{\sqrt{\frac{nm}{2}}}_\text{Sample size}\underbrace{\sqrt{\frac{1}{1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}}}}_\text{Design effect}$$
+
+## The treatment variance ratio's effect on power
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.1", label = "Number units per group per cluster (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  sliderInput("m.1", label = "Number clusters (m)",
+              min = 2, max = 20, step = 1, value = 10),
+  sliderInput("es.1", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("icc.1", label = "Intraclass correlation",
+              min = 0, max = .5, value = .2, step = 0.05),
+  sliderInput("upsilon.1", label = "Ratio of v(treat) to v(mean)",
+              min = 0, max = 2, value = .2, step = 0.05)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "msrt", es = input$es.1, 
+                 n = input$n.1, 
+                 m = input$m.1,
+                 icc = input$icc.1,
+                 upsilon = input$upsilon.1,
+                 marklambda = TRUE)
+}, width = 1000, height = 300)
+```
+
+## Power analysis for multisite randomized trials (no covariates)
+
+By now, we should be getting the hang of this. Compute the design effect, $1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}$
+
+The test is ($df = m - 1$)
+
+$$ \lambda = \delta\sqrt{\frac{nm/2}{1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}}} $$
+
+## Power analysis for multisite randomized trials (no covariates) example I
+
+Suppose we expected an effect size of $\delta = 0.3$, with $m = 5$ clusters (schools), each with $n = 20$ units (students) in each group. We also expect to have an intraclass correlation of $rho_{intra} = 0.2$ and a ratio of treatment variance to the mean variance of $\upsilon = .5$. We start this code like the other examples
+
+```{r}
+m <- 5
+n <- 20
+df <- m - 1
+alpha <- .05
+delta <- .3
+rho.intra <- .2
+upsilon <- .5
+D <- 1 + (n/2*upsilon-1)*rho.intra
+```
+
+To organize our code, we will code a parameter `D` which is the design effect. 
+
+## Power analysis for multisite randomized trials (no covariates) example II
+
+We then finish our code much the same way as the other example, calculating $\lambda$ and finding the areas under the curve
+
+```{r}
+lambda <- delta*sqrt(n*m/2)*sqrt(1/D)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Power analysis for multisite randomized trials (no covariates) example III
+
+Here is the complete program
+
+```{r}
+m <- 5
+n <- 20
+df <- m - 1
+alpha <- .05
+delta <- .3
+rho.intra <- .2
+upsilon <- .5
+D <- 1 + (n/2*upsilon-1)*rho.intra
+lambda <- delta*sqrt(n*m/2)*sqrt(1/D)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Sample size for multisite randomized trials (no covariates) I
+
+Holding all else constant, adding units past 20 has diminishing returns. This is because the design effect $1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}$ is proportional to the within-cluster sample size. 
+
+As a result, we will focus on finding the number of clusters. 
+
+Like before, we need to employ a normal approximation first, then use that result for a t-distribution based estimate. 
+
+Like our code, we will organize the formulas by noting 
+
+$$D = 1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}$$
+
+## Sample size for multisite randomized trials (no covariates) II
+
+The normal approximation is 
+
+$$ m_z \approx \frac{2\left(z_{critical}-z_{\beta}\right)^2D}{n\delta^2} $$
+
+and then we use the $t$ distribution
+
+$$ m \approx \frac{2\left(t_{(m_z-1)critical}-t_{(m_z-1)\beta}\right)^2D}{n\delta^2} $$
+
+## Sample size for multisite randomized trials (no covariates) example I
+
+Suppose we expected an effect size of $\delta = 0.3$, with $n = 20$ units (students) in each group per cluster. We also expect to have an intraclass correlation of $\rho_{intra} = 0.2$ and a ratio of treatment variance to the mean variance of $\upsilon = .5$. How many clusters do we need to achieve power of 0.8? We start this code like the other examples,
+
+``` {r}
+n <- 20
+alpha <- .05
+power <- .8
+delta <- .3
+rho.intra <- .2
+upsilon <- .5
+```
+
+## Sample size for multisite randomized trials (no covariates) example II
+
+We then calculate `D` and find the number of clusters
+
+``` {r}
+D <- 1 + (n/2*upsilon-1)*rho.intra
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+m.z <- 2*(z.crit-z.beta)^2*D/(n*delta^2)
+df <- ceiling(m.z) - 1
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+m <- 2*(t.crit-t.beta)^2*D/(n*delta^2)
+m
+```
+
+## Sample size for multisite randomized trials (no covariates) example III
+
+Full program (using ";" for line breaks to make it fit)
+
+``` {r}
+n <- 20
+alpha <- .05; power <- .8
+delta <- .3; rho.intra <- .2; upsilon <- .5
+D <- 1 + (n/2*upsilon-1)*rho.intra
+z.crit <- qnorm(1-alpha/2); z.beta <- qnorm(1-power)
+m.z <- 2*(z.crit-z.beta)^2*D/(n*delta^2)
+df <- ceiling(m.z) - 1
+t.crit <- qt(1-alpha/2, df); t.beta <- qt(1-power, df)
+m <- 2*(t.crit-t.beta)^2*D/(n*delta^2)
+m
+```
+
+## Minimum Detectable Effect Size for multisite randomized trials (no covariates) I
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \delta_m \approx \sqrt{\frac{2D}{nm}}\left(t_{(m-1)critical}-t_{(m-1)\beta}\right) $$ 
+where
+
+$$D = 1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}$$
+
+and since we are already planning on a sample size, we know the $df = m-1$, so no further approximation is necessary
+
+## MDES example for multisite randomized trials (no covariates) I
+
+Suppose we knew that we had $n = 20$ cases per group per cluster and $m = 5$ clusters with an expected intraclass correlation of $\rho_{intra}=0.1$ and a ratio of treatment variance to the mean variance of $\upsilon = .5$, and we wanted the minimum effect size for power of 0.8 ($\beta = 0.2$), for a two-tailed test with $\alpha = 0.05$ 
+
+```{r }
+n <- 20; m <- 5; df <- m-1
+alpha <- .05
+power <- .8
+rho.intra <- .1
+D <- 1 + (n/2*upsilon-1)*rho.intra
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+delta.m <- sqrt((2*D)/(m*n))*(t.crit-t.beta)
+delta.m
+```
+
+## Multisite randomized trials (with coviarates)
+
+As with cluster randomized trials, we can enter covariates at the unit and cluster levels to reduce the variance components and increase power.  
+
+The regression model in mixed notation is as follows. The outcome for the $i^{th}$ unit assigned to treatment group $j$ in cluster $k$, $y_{ijk}$, is modeled as a function of a treatment indicator ($T$), the covariate $x$ and its cluster mean, a random effect for the cluster $b_{k}$, a random effect of the treatment effect $\left(Tb\right)_{jk}$, and a within-group residual, $e_{ijk}$
+$$	y_{ijk} = \gamma_0 + \gamma_1 T_{ijk} +\gamma_2\left(x_{ijk}-\bar{x}_k\right)+\gamma_3\bar{x}_k + b_{k}^* + \left(Tb\right)_{jk}^*+e_{ijk}^* $$
+
+This again creates $R^2$ parameters For example, the variance of $e^*_{ik(j)}$ would be $\sigma^{2*}_e=\sigma^2_e\left(1-R^2_{unit}\right)$, and the variance of $\left(Tb\right)_{jk}^*$ would be $\sigma^{2*}_{\tau b} = \sigma^{2}_{\tau b}\left(1-R^2_{treat}\right)$
+
+## The test for multisite randomized trials (with coviarates)
+
+The test with covariates, which has $df = m-1-1$, is
+
+$$ \lambda = \delta\sqrt{\frac{nm/2}{1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}-\left(R_{unit}^2+\left(\frac{n}{2}\upsilon R_{treat}^2-R_{unit}^2\right)\rho_{intra}\right)}} $$
+
+where the design effect is 
+
+$$D = 1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}-\left(R_{unit}^2+\left(\frac{n}{2}\upsilon R_{treat}^2-R_{unit}^2\right)\rho_{intra}\right)$$
+
+## Power analysis for multisite randomized trials (with covariates) example I
+
+Suppose we expected an effect size of $\delta = 0.3$, with $m = 5$ clusters (schools), each with $n = 20$ units (students) in each group. We also expect to have an intraclass correlation of $\rho_{intra} = 0.2$ and a ratio of treatment variance to the mean variance of $\upsilon = .5$. Also, we expect to have a covariate that explains a quarter of the variation at the unit level ($R^2_{unit} = .25$) and half of the treatment variance ($R^2_{treat} = .5$).  We start this code like the other examples
+
+```{r}
+m <- 5; n <- 20
+df <- m - 1 - 1
+alpha <- .05
+delta <- .3
+rho.intra <- .2; R2.unit <- .25
+upsilon <- .5; R2.treat <- .5
+D <- 1 + (n/2*upsilon-1)*rho.intra- (R2.unit + (n/2*upsilon*R2.treat-R2.unit)*rho.intra)
+```
+
+To organize our code, we will code a parameter `D` which is the design effect. 
+
+## Power analysis for multisite randomized trials (with covariates) example II
+
+We then finish our code much the same way as the other example, calculating $\lambda$ and finding the areas under the curve
+
+```{r}
+lambda <- delta*sqrt(n*m/2)*sqrt(1/D)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Power analysis for multisite randomized trials (with covariates) example III
+
+Here is the complete program
+
+```{r}
+m <- 5; n <- 20; df <- m - 1 - 1
+alpha <- .05; delta <- .3
+rho.intra <- .2; R2.unit <- .25
+upsilon <- .5; R2.treat <- .5
+D <- 1 + (n/2*upsilon-1)*rho.intra- (R2.unit + (n/2*upsilon*R2.treat-R2.unit)*rho.intra)
+lambda <- delta*sqrt(n*m/2)*sqrt(1/D)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Sample size for multisite randomized trials (with covariates) I
+
+Like before, we need to employ a normal approximation first, then use that result for a t-distribution based estimate. 
+
+Like our code, we will organize the formulas by noting 
+
+$$D = 1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}-\left(R_{unit}^2+\left(\frac{n}{2}\upsilon R_{treat}^2-R_{unit}^2\right)\rho_{intra}\right)$$
+
+## Sample size for multisite randomized trials (with covariates) II
+
+The normal approximation is 
+
+$$ m_z \approx \frac{2\left(z_{critical}-z_{\beta}\right)^2D}{n\delta^2} $$
+
+and then we use the $t$ distribution
+
+$$ m \approx \frac{2\left(t_{(m_z-1-1)critical}-t_{(m_z-1-1)\beta}\right)^2D}{n\delta^2} $$
+
+## Sample size for multisite randomized trials (with covariates) example I
+
+Suppose we expected an effect size of $\delta = 0.3$, with $n = 20$ units (students) in each group per cluster. We also expect to have an intraclass correlation of $\rho_{intra} = 0.2$ and a ratio of treatment variance to the mean variance of $\upsilon = .5$. Also, we expect to have a covariate that explains a quarter of the variation at the unit level ($R^2_{unit} = .25$) and half of the treatment variance ($R^2_{treat} = .5$). How many clusters do we need to achieve power of 0.8? We start this code like the other examples,
+
+``` {r}
+n <- 20
+alpha <- .05
+power <- .8
+delta <- .3
+rho.intra <- .2; R2.unit <- .25
+upsilon <- .5; R2.treat <- .5
+```
+
+## Sample size for multisite randomized trials (with covariates) example II
+
+We then calculate `D` and find the number of clusters
+
+``` {r}
+D <- 1 + (n/2*upsilon-1)*rho.intra- (R2.unit + (n/2*upsilon*R2.treat-R2.unit)*rho.intra)
+z.crit <- qnorm(1-alpha/2); z.beta <- qnorm(1-power)
+m.z <- 2*(z.crit-z.beta)^2*D/(n*delta^2)
+df <- ceiling(m.z) - 1 - 1
+t.crit <- qt(1-alpha/2, df); t.beta <- qt(1-power, df)
+m <- 2*(t.crit-t.beta)^2*D/(n*delta^2)
+m
+```
+
+## Sample size for multisite randomized trials (with covariates) example III
+
+Full program (using ";" for line breaks to make it fit)
+
+``` {r}
+n <- 20
+alpha <- .05; power <- .8; delta <- .3
+rho.intra <- .2; R2.unit <- .25; upsilon <- .5; R2.treat <- .5
+D <- 1 + (n/2*upsilon-1)*rho.intra- (R2.unit + (n/2*upsilon*R2.treat-R2.unit)*rho.intra)
+z.crit <- qnorm(1-alpha/2); z.beta <- qnorm(1-power)
+m.z <- 2*(z.crit-z.beta)^2*D/(n*delta^2)
+df <- ceiling(m.z) - 1 - 1
+t.crit <- qt(1-alpha/2, df); t.beta <- qt(1-power, df)
+m <- 2*(t.crit-t.beta)^2*D/(n*delta^2)
+m
+```
+
+## Minimum detectable effect size for multisite randomized trials (with covariates) I
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \delta_m \approx \sqrt{\frac{2D}{nm}}\left(t_{(m-1-1)critical}-t_{(m-1-1)\beta}\right) $$ 
+where
+
+$$D = 1+\left(\frac{n}{2}\upsilon-1\right)\rho_{intra}-\left(R_{unit}^2+\left(\frac{n}{2}\upsilon R_{treat}^2-R_{unit}^2\right)\rho_{intra}\right)$$
+
+and since we are already planning on a sample size, we know the $df = m-1-1$, so no further approximation is necessary
+
+## MDES example for multisite randomized trials (with covariates) I
+
+Suppose we knew that we had $n = 20$ cases per group per cluster and $m = 5$ clusters with an expected intraclass correlation of $\rho_{intra}=0.1$ and a ratio of treatment variance to the mean variance of $\upsilon = .5$. Also, we expect to have a covariate that explains a quarter of the variation at the unit level ($R^2_{unit} = .25$) and half of the treatment variance ($R^2_{treat} = .5$). We want the minimum effect size for power of 0.8 ($\beta = 0.2$), for a two-tailed test with $\alpha = 0.05$ 
+
+```{r }
+n <- 20; m <- 5; df <- m-1-1
+alpha <- .05; power <- .8; rho.intra <- .1
+D <- 1 + (n/2*upsilon-1)*rho.intra- (R2.unit + (n/2*upsilon*R2.treat-R2.unit)*rho.intra)
+t.crit <- qt(1-alpha/2, df); t.beta <- qt(1-power, df)
+delta.m <- sqrt((2*D)/(m*n))*(t.crit-t.beta)
+delta.m
+```
+
+## Explore!
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.2", label = "Number units per group per cluster (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  sliderInput("m.2", label = "Number clusters (m)",
+              min = 2, max = 20, step = 1, value = 10),
+  sliderInput("es.2", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("icc.2", label = "Intraclass correlation",
+              min = 0, max = .5, value = .2, step = 0.05),
+  sliderInput("upsilon.2", label = "Ratio of v(treat) to v(mean)",
+              min = 0, max = 2, value = .2, step = 0.05),
+  sliderInput("r2u.2", label = "R-square unit",
+              min = 0, max = 1, value = .2, step = 0.05),
+  sliderInput("r2t.2", label = "R-square treatment",
+              min = 0, max = 1, value = .2, step = 0.05)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "msrt", 
+                 es = input$es.2, 
+                 n = input$n.2, 
+                 m = input$m.2,
+                 icc = input$icc.2,
+                 upsilon = input$upsilon.2,
+                 cov = "Yes",
+                 r2u = input$r2u.2,
+                 r2t = input$r2t.2,
+                 marklambda = TRUE)
+}, width = 1000, height = 300)
+```
+

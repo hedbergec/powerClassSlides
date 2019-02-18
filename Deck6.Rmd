@@ -1,0 +1,101 @@
+---
+title: "Intro to Statistical Power for Randomized Trials"
+subtitle: "Deck 6: Assumptions"
+author: "Eric Hedberg, PhD"
+output: 
+  ioslides_presentation: 
+    fig_retina: null
+    highlight: pygments
+    incremental: yes
+    smart: no
+    transition: faster
+    widescreen: yes
+runtime: shiny
+---
+
+```{r, include=FALSE}
+source("functions.R")
+```
+
+## Power analyses are arguments
+
+Power analysis is about assumptions...what you think the future holds
+
+Assumptions can make you look foolish, however
+
+While it is not always possible to get a power analysis "right," the goal should be to make it defensible 
+
+I have often noticed that while no grant has been won because of a _great_ power analysis, many have been passed over because of a _bad_ power analysis. 
+
+## Parts of the argument I
+
+Power analysis arguments surround two elements of design that form the premises.
+
+The _sample design_ details the type of sample and quantifies all the elements of the sample. 
+
+For simple random samples the important quantity is the total sample size. Sample design details relate to the type of analysis as well. 
+
+More complex samples involve more complex quantities. Cluster samples have a sample size for clusters and a sample size within each cluster. 
+
+## Parts of the argument II
+
+The _design parameters_ details quantities such as the expected effect size and correlations. The sampling design specifies what design parameters are necessary to know in order to evaluate power. 
+
+For example, in simple random samples, intraclass correlations are not necessary, but effect sizes are necessary if the analysis is to compare two or more groups. 
+
+
+## The trap
+
+Unfortunately, many researchers fall into the trap of holding to a sampling design (especially sizes) and finding design parameters to support the sample design. 
+
+This is akin to selecting evidence only if it supports a particular point of view. 
+
+This often leads to unreasonable expectations that the effect size or correlations are large, when in fact they might be small.
+
+
+## Large?
+
+"Small" and "large" are relative terms, and the values associated with them vary widely from discipline to discipline,  intervention to intervention, and context to context.
+
+__Do not use conventions__
+
+__Use pilot data or literature__
+
+## Standardized differences in means and correlations
+
+Estimating the correlation between two variables, whether it is a difference in group means or a linear correlation, is the most important assumption in any power analysis
+
+It is always worth while to look at the literature to find evidence that relates to the outcome or intervention, or both. 
+
+Unfortunately, unless the aim of the research is replication, researchers are unlikely to find a study that has used a similar intervention on a similar outcome.
+
+Ask yourself two questions when looking at the literature
+
+1) How similar is the independent variable?
+2) How similar is the dependent variable?
+
+
+## Calculating the effect size from a paper
+
+If the paper provides means for each group and the standard deviations, it is simple to compute the effect size
+
+$$ \delta = \frac{\mu_1-\mu_0}{\sigma} $$
+
+where
+
+$$ \hat{\sigma} = \sqrt{\frac{\left(n_1 - 1\right)\hat{\sigma}_1^2+\left(n_0 - 1\right)\hat{\sigma}_0^2}{n_1+n_0-2}}$$ 
+
+## Converting correlations into difference effect sizes
+
+If the paper provides a correlation between treatment and the outcome, you can approximate a $\delta$ with
+
+$$ \delta = \frac{2\rho}{\sqrt{1-\rho^2}} $$
+
+## Complex sample parameters
+
+In education, the biggest hurdle is the intraclass correlation. 
+
+Much of my research has been on this topic, and there is a good source [here](http://stateva.ci.northwestern.edu/)
+
+
+

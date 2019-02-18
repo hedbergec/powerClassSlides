@@ -1,0 +1,57 @@
+---
+title: "Intro to Statistical Power for Randomized Trials"
+subtitle: "Deck 7: Writing about power"
+author: "Eric Hedberg, PhD"
+output: 
+  ioslides_presentation: 
+    fig_retina: null
+    highlight: pygments
+    incremental: yes
+    smart: no
+    transition: faster
+    widescreen: yes
+runtime: shiny
+---
+
+```{r, include=FALSE}
+source("functions.R")
+```
+
+## What do you need to say?
+
+The power analysis write-up will be different depending on the type of power analysis used (i.e., finding the power, finding the sample size, or finding the minimum detectable effect). In general, it should include the following elements:
+
+
+## The sample design
+
+The sample design proposed (e.g., simple random sample, cluster sample, etc.) and the broad structure of the data; be sure to include factors such as attrition or non-response into your design for the final sample size
+
+## The model
+
+A statement about the statistical model that will be used to estimate the effect and whether covariates are employed
+
+## The parameters
+
+The design parameter assumptions used in the power analysis, including citations/and or data to support them; be sure to include the Type I error assumed ($\alpha$) and whether the test is one or two tailed (if applicable)
+
+## The formula/procedure
+
+Citations for the formula (include expression and/or page number) and/or software (include the procedure or command) used to perform the power analysis and how they relate to the statistical model proposed; if a general statistical package is used for the power analysis, an appendix with the code is often useful
+
+## The results
+
+This is a good place for the results of the analysis: 
+
+* If the analysis seeks to estimate the power, given a sample and effect size, then a statement about the achieved power should be added 
+* If the analysis seeks to estimate the sample size, given a level of power and effect size, then a statement relating the sample size necessary and how it matches the proposed budget and recruitment prospects should be added
+* If the analysis seeks to estimate a minimum detectable effect, given a sample size/design and level of power, then a statement about how this effect size compares with the literature should be added
+
+## Sensitivity
+
+ A statement about the sensitivity of the results to deviations from the design parameter assumptions or sampling design assumptions; if space permits, graphs are helpful
+
+## Parameter populations and your population
+
+(Optional, but becoming more important as external validity becomes more of a focus) A statement about how the population(s) used for the assumptions is (are) a good fit for the population to be studied
+
+

@@ -1,0 +1,667 @@
+---
+title: "Intro to Statistical Power for Randomized Trials"
+subtitle: "Deck 2: Independent samples t-test"
+author: "Eric Hedberg, PhD"
+output: 
+  ioslides_presentation: 
+    fig_retina: null
+    highlight: pygments
+    incremental: yes
+    smart: no
+    transition: faster
+    widescreen: yes
+runtime: shiny
+---
+
+```{r, include=FALSE}
+source("functions.R")
+```
+
+## Introduction
+
+In many cases researchers want to understand whether a "treatment" is associated with a better or worse outcome. 
+
+This lends itself to be a natural fit for the independent-samples t-test, where we test the means of 
+
+* a treatment group
+* a control or counter-factual group
+
+against each other
+
+Power analysis is very important in designing such a trial
+
+## Balancing three things
+
+Power analyses include three tasks:
+
+* Finding the power for an effect size with a sample size.
+* Finding the sample size necessary to get a level of power for an effect size.
+* Finding the lowest effect size possible with a given sample size and power.
+
+Doing any of these tasks requires mastery of the test statistic in question. 
+
+## This session
+
+In this session, we will discuss
+
+* the data-generating process
+* the test itself
+* the test in scale free parameters
+* how to relate the test to sampling distributions and critical values
+* power analysis for the independent samples z-test
+* power analysis for the independent samples t-test
+
+## A linear model
+
+Here is a simple linear model about how we can think the outcome data are generated
+
+\[
+y_{ij} = \mu+ \tau_j + e_{ij}
+\]
+
+where $y$ is the outcome for unit (e.g., person) $i$ in treatment group $j$, which is a function of 
+
+* some grand mean $\mu$
+* the effect of being in treatment $j$ ($\tau_j = \mu_j - \mu$)
+* and $e_{ij}$ is the within-group residual error, or the other factors that influence the outcome of unit $i$ in group $j$ ($e_{ij} = y_{ij} - \mu_j$)
+
+## Important parameters
+
+We assume that each observation from each treatment group is drawn from a population with the same variance 
+
+$$ e \sim N(0,\sigma^2) $$  
+
+If this variance were known, and we denote the mean of the treatment group as $\mu_1$ and the mean of the control group as $\mu_0$, then the estimated difference between the means (i.e., $\bar{y}_1 - \bar{y}_0$) would be normally distributed with a mean of the population difference, $\mu_1-\mu_0$ and variance $\sigma^2\frac{2}{n}$,  
+
+\[
+	\bar{y}_1 - \bar{y}_0 \sim N\left[\mu_1-\mu_0, \sigma^2\frac{2}{n}\right].
+\]
+
+# Standard normal test (z-test)
+
+## The test where $\sigma^2$ is known
+
+If $\bar{y}_1$ is the mean for the intervention group and $\bar{y}_0$ is the mean of the control group, and each group has $n$ observations (i.e., balanced data), then
+
+$$\bar{y}_1 - \bar{y}_0 \sim N\left[\mu_1-\mu_0,\sigma^2\frac{2}{n}\right]$$
+
+Thus, to get the p-value, you calculate the z-score of the observed difference in the means as it relates to the null hypothesis and the variance of the mean difference.
+
+$$ z = \frac{(\bar{y}_1 - \bar{y}_0)-\mbox{Null hypothesis}}{\sqrt{\sigma^2\frac{2}{n}}} $$
+If $z$ is greater in magnitude than the critical value, you reject the null. We usually say the null hypothesis is 0
+
+## Effect sizes and scale free parameters
+
+This test statistic 
+$$ z = \frac{(\bar{y}_1 - \bar{y}_0)}{\sqrt{\sigma^2\frac{2}{n}}} $$
+uses parameters in the scale of the outcome, namely $y$ and $\sigma$. 
+
+These exact values are hard to anticipate. We can simplify this test by using the _effect size_ quantity $\delta$, defined as (Cohen)
+
+$$ \delta = \frac{\bar{y}_1 - \bar{y}_0}{\sigma} $$
+
+## Non-centrality parameter
+
+This leads us to the _expected_ test statistic, $\lambda$, as a function of effect size and sample size
+
+$$ \lambda = \frac{(\bar{y}_1 - \bar{y}_0)}{\sqrt{\sigma^2\frac{2}{n}}} = \delta\sqrt{\frac{n}{2}}$$
+
+where
+
+$$ \delta = \frac{\bar{y}_1 - \bar{y}_0}{\sigma} $$
+
+We use the _expected_ test statistic as the _mean_ of the alternative distribution
+
+## Power analysis
+
+Power analysis is tied to Type II error ($\beta$), or the chance that we accept the null hypothesis when in fact the alternative is true. 
+
+ For example, if our alternative hypothesis states that $\bar{y}_1 - \bar{y}_0 \ne 0$, and our two-tailed test sets $\alpha = 0.05$, our critical value of $z$ is $\pm 1.96$. Power asks what is the chance that our sample will produce something equal to or higher in magnitude than $1.96$
+ 
+In other words, Type II error (the complement of power) asks what is the chance that our test statistic  winds up less than 1.96 in magnitude, even though the alternative hypothesis is true?
+
+
+## Logic of power analysis
+
+To answer this question, we suppose some expected test result ($\lambda$), then draw an _alternative_ sampling distribution around that expected test result where the mean of the distribution is $\lambda$. 
+
+Noting where the critical value falls, Type II error ($\beta$) for a two-tailed test is simply the area of the _alternative_ distribution between the critical values. The following graph is for $\delta = 0.25$ and $n = 30$
+``` {r, echo = FALSE}
+renderPlot({
+  exactPowerPlot(type = "srs", es = .5, n = 30, marklambda = TRUE)
+}, width = 1000, height = 300)
+```
+
+## All about the test
+
+So, the _expected_ test is what determines power. The alternative distribution is governed by its mean, the _noncentrality parameter_, $\lambda$
+$$\mbox{Expected test} = \lambda = \underbrace{\delta}_\text{Effect size}\underbrace{\sqrt{\frac{n}{2}}}_\text{Sample size}$$
+
+The goal is to break down the expected test into scale-free parameters that don't require knowledge about the unit of measurement. We can figure out the anatomy of the test by looking at the "Statistics 101" regression formula. 
+
+## Example
+
+See how $\lambda = \delta\sqrt{n/2}$ changes with the sample size ($n$) and effect size ($\delta$), and also how the distribution moves with $\lambda$
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.1", label = "Number per group (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  
+  sliderInput("es.1", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.1, n = input$n.1, marklambda = TRUE)
+}, width = 1000, height = 300)
+```
+
+## Computing areas
+
+With the standard normal curve, we can find the area under the curve using a cumulative distribution function (CDF). The CDF for the standard normal curve is called $\Phi$, and the R function is called `pnorm'
+
+```{r}
+pnorm(1.96)
+```
+
+which tells us that `r 100*pnorm(1.96)` percent of the normal curve is before $z = 1.96$
+
+## CDF Example
+
+Enter a value for $z$ to see the CDF at work
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("z", label = "z",
+              min = -4, max = 4, step = .25, value = 0)
+  )
+
+renderPlot({
+  cdfPlot(input$z)
+}, width = 1000, height = 300)
+```
+
+## Critical values
+
+The inverse of the CDF, or $\Phi^{-1}$, is the quantile function that tells us the value of $z$ for a given cumulative probability. For example, the quantile of the standard normal distribution at 2.5 percent can be found using the `qnorm` function
+
+``` {r}
+qnorm(0.025)
+```
+
+which tells us that the value of $z$ that is after 2.5 percent of the distribution is `r qnorm(0.025)`. We can use this to find critical values of the distribution. The classic value of 1.96 comes from setting `alpha <- 0.05` `r alpha <- 0.05` and finding
+
+``` {r}
+qnorm(1-alpha/2) #two tailed critical value
+```
+
+## Typical critical values
+
+```{r, echo = FALSE}
+inputPanel(
+  selectInput("alpha.1", "Pick alpha",choices = c(0.1,.05,.01,.001), selected = .05),
+  selectInput("tails", "Pick tails", choices = c(1,2), selected = 2)
+)
+
+renderText({
+  paste("Critical value for positive difference=",as.character(qnorm(1-as.numeric(input$alpha.1)/as.numeric(input$tails))))
+})
+
+renderPlot({
+  plot(seq(from=-4, to=4, by= .01 ), dnorm(seq(from=-4, to=4, by= .01 )), 
+       type = "l", xlab = "z", ylab = "density")
+  if (input$tails == "1") {
+    abline(v = c(qnorm(1-as.numeric(input$alpha.1)/as.numeric(input$tails))))
+  }
+  else {
+    abline(v = c(qnorm(as.numeric(input$alpha.1)/as.numeric(input$tails)),qnorm(1-as.numeric(input$alpha.1)/as.numeric(input$tails))))
+  }
+  
+}, width = 1000, height = 300)
+
+```
+
+## Critical values and power
+
+How does $\alpha$ influence $\beta$ (and $1-\beta=$ power)? 
+
+Two-tailed example
+
+```{r, echo = FALSE}
+inputPanel(
+  selectInput("alpha.2", "Pick alpha",choices = c(0.1,.05,.01,.001), selected = .05),
+  sliderInput("n.2", label = "Number per group (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  
+  sliderInput("es.2", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.2, n = input$n.2, alpha = as.numeric(input$alpha.2))
+}, width = 1000, height = 300)
+```
+
+## Computing power with the standard normal curve
+
+Once we have an effect size and sample size, we can compute $\lambda$. When we pick $\alpha$ and the number of tails, we get the critical value $z$. With $\lambda$, $z$, and the CDF ($\Phi$), we can compute $\beta$
+
+One tailed $\beta$ is $\beta = \Phi\left(z_{1-\alpha}-\lambda\right)$
+
+Two tailed $\beta$ is $\beta = \Phi\left(z_{1-\alpha/2}-\lambda  \right)-\Phi\left(z_{\alpha/2}- \lambda  \right)$
+
+which is simply giving us the area of the alternative distribution by subtraction.
+
+Power is then simply $1-\beta$
+
+## Computing power example (normal curve)
+
+Suppose we thought the effect size was going to be $\delta = .25$ and we wanted the power for a sample size of 20 per group ($n = 20$), for a two-tailed test with $\alpha = 0.05$ (so $z_{critical} = 1.96$)
+
+
+```{r }
+delta <- .25
+n <- 20
+alpha <- .05
+lambda <- delta*sqrt(n/2)
+beta <- pnorm(qnorm(1-alpha/2) - lambda) - pnorm(qnorm(alpha/2)-lambda)
+power <- 1-beta
+power
+```
+
+c.f. $\beta = \Phi\left(z_{1-\alpha/2}-\lambda  \right)-\Phi\left(z_{\alpha/2}- \lambda  \right)$
+
+## Useful relationships
+
+Given a standard normal distribution, we can use the power formulas to calculate useful quantities. For example, consider the Type II error ($\beta$) for a one-tailed test. 
+$$ \beta = \Phi\left(z_{1-\alpha}-\lambda\right) $$
+Here, $\beta$ is an area of the normal curve. Thus, we can reverse the $\Phi$ on both sides of the equation to reveal a quantile of the standard normal distribution, $z_{\beta}$
+$$ z_{\beta} = z_{1-\alpha}-\lambda, $$
+And now, the expected test is a function of the two $z$ quantiles
+$$ \lambda = z_{1-\alpha}-z_{\beta}. $$
+
+## Needed sample size for one-tailed tests (normal curve)
+
+Now that the test ($\lambda$) is equated with the two quantiles of the $z$ distribution, which are governed by the Type I ($\alpha$) and Type II ($\beta$) errors, we can solve for the sample size
+
+$$ \lambda =\delta\sqrt{\frac{n}{2}}= z_{1-\alpha}-z_{\beta}. $$ 
+$$n = \frac{2(z_{1-\alpha}-z_{\beta})^2}{\delta^2}$$
+
+So, if we pick $\alpha$ and $\beta$, we can easily compute the needed sample (per group) using the quantiles $z_{1-\alpha}$ and $z_{\beta}$
+
+## Needed sample size for two-tailed tests (normal curve)
+
+Recall that the Type II error for a two tailed test is
+
+$$\beta = \Phi\left(z_{1-\alpha/2}-\lambda  \right)-\Phi\left(z_{\alpha/2}- \lambda  \right)$$
+
+Which poses problems we because we are subtracting two $\Phi$ functions (it we can't just reverse it on both sides). However, we are lucky because the second term, $\Phi\left(z_{\alpha/2}- \lambda  \right)$ is usually really small. Thus, in practice, we ignore it. 
+
+That makes the useful relationship a function of the critical value
+
+$$ \lambda =\delta\sqrt{\frac{n}{2}} \approx z_{critical}-z_{\beta} \mbox{ , and so, } n \approx \frac{2(z_{critical}-z_{\beta})^2}{\delta^2} $$ 
+
+## Sample size example (normal curve)
+
+Suppose we thought the effect size was going to be $\delta = .5$ and we wanted the sample size for power of 0.8 ($\beta = 0.2$, so $z_{\beta} = -0.84$), for a two-tailed test with $\alpha = 0.05$ (so $z_{critical} = 1.96$)
+
+```{r }
+delta <- .5
+alpha <- .05
+power <- .8
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+n <- 2*(z.crit-z.beta)^2/delta^2
+n
+```
+
+c.f.  $n \approx 2(z_{critical}-z_{\beta})^2/\delta^2$
+
+## Minimum detectable effect size (MDES, normal curve)
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \lambda = \delta\sqrt{\frac{n}{2}} \approx z_{critical}-z_{\beta} \mbox{ , and so, } \delta_m = \sqrt{\frac{2}{n}}(z_{critical}-z_{\beta}) $$ 
+
+## MDES example (normal curve)
+
+Suppose we knew that we had 20 cases per group and we wanted the minimum effect size for power of 0.8 ($\beta = 0.2$, so $z_{\beta} = -0.84$), for a two-tailed test with $\alpha = 0.05$ (so $z_{critical} = 1.96$)
+
+```{r }
+n <- 20
+alpha <- .05
+power <- .8
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+delta.m <- sqrt(2/n)*(z.crit-z.beta)
+delta.m
+```
+
+c.f. $\delta_m \approx \sqrt{\frac{2}{n}}(z_{critical}-z_{\beta})$
+
+# The t-test 
+
+## Test where $\sigma^2$ is unknown
+
+Usually, we do not know the value of $\sigma^2$
+
+However, once we estimate $\sigma^2$ from the data, the test is the same
+
+$$ \lambda = \frac{(\bar{y}_1 - \bar{y}_0)}{\sqrt{\hat{\sigma}^2\frac{2}{n}}} = \delta\sqrt{\frac{n}{2}}$$
+
+where
+
+$$ \delta = \frac{\bar{y}_1 - \bar{y}_0}{\hat{\sigma}} $$
+
+## Analysis
+
+This analysis can be accomplished using a least-squares approach like regression (or a simple t-test routine).
+
+The statistical regression model for case $i$ in experimental group $j$ is
+
+$$ y_{ij} = \gamma_0 + \gamma_1 T_{ij} + e_{ij} $$
+
+where $$ T_{ij} = \left\{ \begin{array}{ll}
+   0 & \mbox{if Control};\\
+   1 & \mbox{if Treatment}.\end{array} \right. \mbox{ and  } e_{ij} \sim N(0, 
+   \sigma^2) $$
+
+Note that the variance of the residuals is the estimate of the population variance without treatments.
+
+## Degrees of freedom (I)
+
+We test $\gamma_1 = 0$ using the $t$ distribution
+
+The distribution of the $t$-test is related to the $z$ distribution
+
+$$ t = \frac{Z}{\sqrt{\frac{1}{\nu}\sum_{i=1}^\nu Z_i^2}} $$
+where $\nu$ is the degrees of freedom parameter. 
+
+
+## Degrees of freedom (II)
+
+Degrees of freedom is sometimes a difficult concept. Essentially, it is the number of values that can vary once we know a statistic about the value. 
+
+For example, given the values 5 and 7, if we know the mean is 6, then we really only have 1 piece of information in the set {5,7}. This is because if I tell you that we have 2 numbers, 7 and an unknown number $a$, but that the mean is 6, we can figure out the unknown number with 
+$$ 6 = \frac{7+a}{2}, a = 6\times2-7 = 5 $$
+
+The degrees of freedom for this test is $2n-2$ because we estimate a mean for treatment and a mean for control
+
+## The t-distribution changes with the degrees of freedom
+
+```{r, echo = FALSE}
+t <- seq(-3, 3, by = .01)
+plot(t, dnorm(t), type = "l", lty = 1)
+lines(t, dt(t, 1), type = "l", lty = 2)
+lines(t, dt(t, 2), type = "l", lty = 3)
+lines(t, dt(t, 3), type = "l", lty = 4)
+legend(-3, .4, c("Norm", "t, df = 1", "t, df = 2", "t, df = 3"), lty = c(1,2,3,4))
+
+```
+
+## The the t-distribution critical values
+
+Critical values based on $\alpha$ differ based on the degrees of freedom (df)
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("df.3", "Pick df",min = 1, max = 30, value = 3),
+  selectInput("alpha.3", "Pick alpha",choices = c(0.1,.05,.01,.001), selected = .05),
+  selectInput("tails.3", "Pick tails", choices = c(1,2), selected = 2)
+)
+
+renderText({
+  paste("Critical value for positive difference (t) =",
+        as.character(qt(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3), input$df.3)))
+})
+renderText({
+  paste("Critical value for positive difference (z) =",
+        as.character(qnorm(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3))))
+})
+
+renderPlot({
+  plot(seq(from=-4, to=4, by= .01 ), dt(seq(from=-4, to=4, by= .01 ), input$df.3), 
+       type = "l", xlab = "t", ylab = "density", lty = 1, ylim = c(0,.4))
+  lines(seq(from=-4, to=4, by= .01 ), dnorm(seq(from=-4, to=4, by= .01 )), 
+       type = "l", xlab = "t", ylab = "density", lty = 2, ylim = c(0,.4))
+  if (input$tails.3 == "1") {
+    abline(v = qt(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3),input$df.3), lty = 1)
+    abline(v = qnorm(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3)), lty = 2)
+  }
+  else {
+    abline(v = c(
+      qt(as.numeric(input$alpha.3)/as.numeric(input$tails.3), input$df.3),
+      qt(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3), input$df.3)
+      ), lty = 1
+      )
+    abline(v = c(
+      qnorm(as.numeric(input$alpha.3)/as.numeric(input$tails.3)),
+      qnorm(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3))
+      ), lty = 2
+      )
+  }
+  legend(-4, .3, c("t-dist critical", "norm critical"), lty = c(1,2))
+}, width = 1000, height = 300)
+
+```
+
+
+## Power and the t-distribution
+
+The alternative distribution is based on the df, so $\beta$ and power are also impacted (they are also impacted by the critical values based on the df)
+
+```{r, echo = FALSE}
+inputPanel(
+  selectInput("alpha.4", "Pick alpha", choices = c(0.1,.05,.01,.001), selected = .05),
+  sliderInput("n.4", label = "Number per group (n)",
+              min = 2, max = 50, step = 1, value = 10),
+  
+  sliderInput("es.4", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.4, n = input$n.4, alpha = as.numeric(input$alpha.4))
+}, width = 1000, height = 300)
+```
+
+## Computing power with the t distribution
+
+Once we have an effect and sample size, we can compute $\lambda$. When we pick $\alpha$, assume two-tails, and compute the df, we get the critical value $t_{critical}$. 
+
+However, the task is slightly different for the $t$ distribution compared with the $z$ distribution
+
+With $\lambda$, the degrees of freedom, and $t_{critical}$ we can compute $\beta$ using the CDF of the non-central $t$ distribution. 
+
+
+## Using the non-central t distribution
+
+We need a non-central CDF computer for this task. We can note it as "H" and say that Type II error for a one-tailed positive test is 
+
+$$ \beta = \underbrace{H\left[t_{(df)1-\alpha},df,\lambda\right]}_\text{Area before right critical value} $$
+
+and for a two-tailed test it is
+
+$$ \beta = \underbrace{H\left[t_{(df)1-\frac{\alpha}{2}},df,\lambda\right]}_\text{Area before right critical value}-\underbrace{H\left[t_{(df)\frac{\alpha}{2}},df,\lambda\right]}_\text{Area before left critical value} $$
+
+where $H\left[a,b,c\right]$ is the cumulative distribution function (CDF) of the _non-central_ $t$ distribution at point $a$ with $b=df=2n-2$ degrees of freedom and non-centrality parameter $c=\lambda$; $t_{(df)q}$ is the $q^{th}$ quantile of the central $t$-distribution associated with the degrees of freedom (i.e., the critical value). Power is then simply $1-\beta$
+
+## Computing power example (t distribution) I
+
+Suppose we thought the effect size was going to be $\delta = .25$ and we wanted the power for a sample size of 20 per group ($n = 20$), for a two-tailed test with $\alpha = 0.05$ 
+
+First, we need the degrees of freedom and to set `alpha`
+
+```{r}
+n <- 20
+df <- 2*n-2
+alpha <- .05
+```
+
+## Computing power example (t distribution) II
+
+Next, we set $\delta=$ `delta`, calculate $\lambda=$ `lambda`, and use `pt` as the $H$ function, and using `qt` to get the critical values
+```{r }
+delta <- .25
+lambda <- delta*sqrt(n/2)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+c.f. $$ \beta = H\left[t_{(df)1-\frac{\alpha}{2}},df,\lambda\right] -H\left[t_{(df)\frac{\alpha}{2}},df,\lambda\right] $$
+
+## Computing power example (t distribution) III
+
+Here is the whole program
+
+```{r}
+n <- 20
+df <- 2*n-2
+alpha <- .05
+delta <- .25
+lambda <- delta*sqrt(n/2)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Needed sample size for t-tests
+
+Recall that for the normal distribution, the useful relationship a function of the critical value
+
+$$ \lambda =\delta\sqrt{\frac{n}{2}} \approx z_{critical}-z_{\beta} \mbox{ , and so, } n \approx \frac{2(z_{critical}-z_{\beta})^2}{\delta^2} $$ 
+
+This trick will not work because to get the critical value of $t$, we need to know the $df$, which is based on the sample size. 
+
+However, we can use the result from the normal approximation ($n_z$) as a start, then use that answer for the $df$ in a similar formula
+
+$$ n \approx \frac{2\left(t_{(2n_z-2)critical}-t_{(2n_z-2)\beta}\right)^2}{\delta^2} $$
+
+## Sample size example (t distribution) I
+
+Suppose we thought the effect size was going to be $\delta = .5$ and we wanted the sample size for power of 0.8 ($\beta = 0.2$), for a two-tailed test with $\alpha = 0.05$. We start with the normal approximation 
+
+```{r }
+delta <- .5
+alpha <- .05
+power <- .8
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+n.z <- 2*(z.crit-z.beta)^2/delta^2
+n.z
+```
+
+## Sample size example (t distribution) II
+
+Next, we calculate `df` using a rounded-up value of `n.z`, and use it in the `qt` function
+
+```{r}
+df <- 2*ceiling(n.z) - 2
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+n <- 2*(t.crit-t.beta)^2/delta^2
+n
+```
+
+c.f. $n \approx 2 \left(t_{(2n_z-2)critical}-t_{(2n_z-2)\beta}\right)^2/ \delta^2$
+
+
+## Sample size example (t distribution) III
+
+Here is the complete program 
+
+```{r}
+delta <- .5
+alpha <- .05
+power <- .8
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+n.z <- 2*(z.crit-z.beta)^2/delta^2
+df <- 2*ceiling(n.z) - 2
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+n <- 2*(t.crit-t.beta)^2/delta^2
+n
+```
+
+## Minimum detectable effect size (MDES, t distribution)
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \lambda = \delta\sqrt{\frac{n}{2}} \approx \left(t_{(2n-2)critical}-t_{(2n-2)\beta}\right) \mbox{ , and so, } \delta_m \approx \sqrt{\frac{2}{n}}\left(t_{(2n-2)critical}-t_{(2n-2)\beta}\right) $$ 
+
+and since we are already planning on a sample size, we know the $df$, so no further approximation is necessary
+
+## MDES example (t distribution)
+
+Suppose we knew that we had 20 cases per group ($df = 2\times20-2=38$) and we wanted the minimum effect size for power of 0.8 ($\beta = 0.2$), for a two-tailed test with $\alpha = 0.05$ 
+
+```{r }
+n <- 20
+df <- 2*n-2
+alpha <- .05
+power <- .8
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+delta.m <- sqrt(2/n)*(t.crit-t.beta)
+delta.m
+```
+
+# Intuitions
+
+## How does power vary with sample size and effect size?
+
+Suppose a two-tailed test with $\alpha = 0.05$
+
+``` {r, echo = FALSE}
+curve(powervalues(x,.5,.05), 
+      from = 2, to = 100, lty = 1,
+      ylim=range(c(0,1)), 
+      ylab = "Power", xlab = "n")
+par(new = TRUE)
+curve(powervalues(x,1,.05), 
+      from = 2, to = 100, lty = 2,
+      ylim=range(c(0,1)), ylab = "Power",
+      xlab = "n")
+legend(70,.6, legend = (c(expression(delta),"0.50","1.00")),
+       lty = c(NA,1,2))
+```
+
+
+## How does MDES vary with sample size and power?
+
+``` {r, echo = FALSE}
+curve(mdesvalues(x,.7,.05), 
+      from = 2, to = 30, lty = 1,
+      ylim=range(c(0,6)), 
+      ylab = "MDES", xlab = "n")
+par(new = TRUE)
+curve(mdesvalues(x,.9,.05), 
+      from = 2, to = 30, lty = 2,
+      ylim=range(c(0,6)), 
+      ylab = "MDES", xlab = "n")
+legend(20,6, legend = (c("Power",".7",".9")),
+       lty = c(NA,1,2))
+```
+
+## Explore!
+
+```{r, echo = FALSE}
+inputPanel(
+  selectInput("alpha.5", "Pick alpha", choices = c(0.1,.05,.01,.001), selected = .05),
+  sliderInput("n.5", label = "Number per group (n)",
+              min = 2, max = 50, step = 1, value = 10),
+  
+  sliderInput("es.5", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.5, 
+                 n = input$n.5, 
+                 alpha = as.numeric(input$alpha.5),
+                 marklambda = TRUE)
+}, width = 1000, height = 300)
+```
+

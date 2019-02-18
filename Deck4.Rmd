@@ -1,0 +1,538 @@
+---
+title: "Intro to Statistical Power for Randomized Trials"
+subtitle: "Deck 4: Cluster randomized trials"
+author: "Eric Hedberg, PhD"
+output: 
+  ioslides_presentation: 
+    fig_retina: null
+    highlight: pygments
+    incremental: yes
+    smart: no
+    transition: faster
+    widescreen: yes
+runtime: shiny
+---
+
+```{r, include=FALSE}
+source("functions.R")
+```
+
+## Multilevel models
+
+In many areas of social experimentation, natural clusters of experimental units can be encountered. These include
+
+* Districts, schools, classrooms
+* Counties, cities, neighborhoods, census tracts
+* Others
+
+In such situations, it may make sense to perform the random assignment at the cluster level. 
+
+This changes the appropriate analysis, and as a consequence, power analysis. 
+
+Note: I'll cover two types of multilevel models today, but others can be found [here](https://ies.ed.gov/ncser/pubs/20103006/pdf/20103006.pdf)
+
+## Cluster randomized trials
+
+In a cluster randomized trial, units (like students) are nested in clusters (like schools), which in turn are nested in experimental groups. 
+
+Suppose we have $j = \{1,2\}$ treatments, each with $k = \{1,2,\dots m\}$ clusters assigned to them, and each cluster has $i = \{1,2,\dots n\}$ units. 
+
+The data generating process for this model adds a term and subscripts to:
+$$	y_{ik(j)}=\mu+\tau_j+b_{k(j)}+e_{ik(j)} $$
+
+* where $y_{ik(j)}$ is the outcome for the $i^{th}$ unit in cluster $k$ assigned to treatment group $j$ 
+* $\tau_j=\mu_j - \mu$ is the treatment effect for group $j$ (as before), 
+* $b_{k(j)} = \mu_{k(j)}-\mu_j$ is a random effect for cluster $k$ net of the treatment effect, 
+* and $e_{ik(j)}=y_{ik(j)}-\mu_{k(j)}$ is the within group and cluster error term. 
+
+## Sources of variance
+
+Since our data were observed with random processes (randomly obtaining clusters and randomly obtaining units within clusters), we have two sources of variance net of the fixed treatment effect.  These variance components are based on the variances of the random effects. Specifically,  
+
+* $e_{ik(j)}\sim N\left(0,\sigma_e\right)$ and 
+* $b_{k(j)}\sim N \left(0,\sigma_b\right)$. 
+
+Thus, $\sigma_e^2$ and $\sigma_b^2$ are variance components, and the total variance in the outcome, net of treatment, is 
+
+$$ \sigma^2 = \sigma_b^2+\sigma_e^2 $$
+
+## Two analysis notations (mixed model)
+
+Generally, these are called linear mixed models (mixed because of the mix of fixed treatment and random school effects). 
+
+We write down the mixed model much like the data generating process
+
+$$ y_{ik(j)} = \gamma_{0}+\gamma_1T_{k(j)}+b_{k(j)}+e_{ik(j)} $$
+
+## Two analysis notations (HLM student model)
+
+In education, these are more often called Hierarchical Linear Models (HLM), but they are the same models with different notation. 
+
+In the HLM notation, we think of equations at different levels. The unit (student) level model is
+
+$$ y_{ik(j)}=\pi_{0k(j)}+e_{ik(j)} $$
+
+* where $\pi_{0k(j)}$ is the average outcome for units within cluster $k$ and treatment group $j$ and 
+
+* $e_{ik(j)}$ is the within cluster-group residual distributed normal with a standard deviation of $\sigma_e$
+
+
+## Two analysis notations (HLM school model)
+
+We then posit that each cluster-group's mean is a function of a set of covariates (namely, the treatment indicator) and a random effect
+
+$$ \pi_{0k(j)} = \gamma_{00} + \gamma_{01}T_{k(j)}+b_{0k(j)} $$
+
+* $\gamma_{00}$ is the overall average of the means for the control group clusters ($T = 0$) 
+* $\gamma_{01}$ is the difference between the average of treatment group cluster means and the average of the control group cluster means. 
+* $b_{0k(j)}=\pi_{0k(j)}-(\gamma_{00} + \gamma_{01}T_{k(j)})$, or the difference between the cluster-group specific mean and the treatment or control group mean. 
+
+
+## The t-test for cluster randomized trials (no covariates) I
+
+What ever notation you use (you get the same answer), the t-test for the effect of treatment works out to be
+
+$$ t = \frac{\mu_1-\mu_0}{\sqrt{\frac{2}{nm}\left(\sigma_e^2+n\sigma_b^2\right)}} $$
+
+Which needs to be converted to the expected test using scale-free parameters for the effect size and variance components
+
+## Design parameters for cluster randomized trials
+
+We define an effect size as before, using both variance components
+
+$$ \delta =\frac{\mu_1-\mu_0}{\sigma} =\frac{\mu_1-\mu_0}{\sqrt{\sigma_b^2+\sigma_e^2}} $$
+
+and we can define the cluster level variance component as an intraclass correlation
+
+$$ \rho_{intra} = \frac{\sigma_b^2}{\sigma_b^2+\sigma_e^2} $$
+which makes the unit level variance component $1 - \rho_{intra}$. This works because we are using an effect size $\delta$ which standardizes the total variance into 1
+
+
+## The t-test for cluster randomized trials (no covariates) II
+
+The _expected_ test statistic can now be expressed as
+
+$$ \lambda = \underbrace{\delta}_\text{Effect size}\underbrace{\sqrt{\frac{nm}{2}}}_\text{Sample Size}\underbrace{\sqrt{\frac{1}{1+\left(n-1\right)\rho_{intra}}}}_\text{Design Effect} $$
+
+The $df = 2\times m - 2$, which is based on the clusters per treatment group and _not_ the units. 
+
+Compare this test with the simple random sample expected test
+
+$$  \lambda = \underbrace{\delta}_\text{Effect size}\underbrace{\sqrt{\frac{n}{2}}}_\text{Sample size} $$ 
+
+## Design effects
+
+In the previous slide we saw a new term: design effect. The design effect in this case is $1+\left(n-1\right)\rho_{intra}$.
+
+A design effect tells us how much the sampling variance (that produce the standard error) increases from one design (simple random sample) to another (cluster randomized trial)
+
+If $\rho_{intra} = 0$, there is no between-group variance and so the design effect is 1 (and so the test is the same as the simple random sample). 
+
+If $\rho_{intra} \ne 0$, the sampling variance increases proportional to the intraclass correlation and within-cluster sample size. 
+
+## Intraclass correlation effect on power
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.1", label = "Number units per cluster (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  sliderInput("m.1", label = "Number clusters per group (m)",
+              min = 2, max = 20, step = 1, value = 10),
+  sliderInput("es.1", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("icc.1", label = "Intraclass correlation",
+              min = 0, max = .5, value = .2, step = 0.05)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "crt", es = input$es.1, 
+                 n = input$n.1, 
+                 m = input$m.1,
+                 icc = input$icc.1,
+                 marklambda = TRUE)
+}, width = 1000, height = 300)
+
+renderText({
+  N <- input$n.1*input$m.1*2
+  paste("Total sample size = ", as.character(N))
+})
+```
+
+## Power analysis for cluster randomized trials (no covariates)
+
+Using a computer, the trick is to enter the correct parameters for the design effect and $df$ for the expected test
+
+$$ \lambda = \delta\sqrt{\frac{nm}{2}}\sqrt{\frac{1}{1+\left(n-1\right)\rho_{intra}}} $$
+
+Again, the $df = 2 \times m - 2$
+
+## Power analysis for cluster randomized trials (no covariates) example I
+
+Suppose we expected an effect size of $\delta = 0.3$, with $m = 5$ clusters (schools) in each treatment group and $n = 20$ units (students) in each cluster. We also expect to have an intraclass correlation of $rho_{intra} = 0.2$. We start this code like the other examples
+
+```{r}
+m <- 5
+n <- 20
+df <- 2*m-2
+alpha <- .05
+delta <- .3
+rho.intra <- .2
+D <- 1 + (n-1)*rho.intra
+```
+
+To organize our code, we will code a parameter `D` which is the design effect. 
+
+## Power analysis for cluster randomized trials (no covariates) example II
+
+We then finish our code much the same way as the other example, calculating $\lambda$ and finding the areas under the curve
+
+```{r}
+lambda <- delta*sqrt(n*m/2)*sqrt(1/D)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Power analysis for cluster randomized trials (no covariates) example III
+
+Here is the complete program
+
+```{r}
+m <- 5
+n <- 20
+df <- 2*m-2
+alpha <- .05
+delta <- .3
+rho.intra <- .2
+D <- 1 + (n-1)*rho.intra
+lambda <- delta*sqrt(n*m/2)*sqrt(1/D)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Sample size for cluster randomized trials (no covariates) I
+
+Holding all else constant, adding units past 30 has diminishing returns. This is because the design effect $1+\left(n-1\right)\rho_{intra}$ is proportional to the within-cluster sample size. 
+
+As a result, we will focus on finding the number of clusters. 
+
+Like before, we need to employ a normal approximation first, then use that result for a t-distribution based estimate. 
+
+Like our code, we will organize the formulas by noting 
+
+$$D = 1+\left(n-1\right)\rho_{intra}$$
+
+## Sample size for cluster randomized trials (no covariates) II
+
+The normal approximation is 
+
+$$ m_z \approx \frac{2\left(z_{critical}-z_{\beta}\right)^2D}{n\delta^2} $$
+
+and then we use the $t$ distribution
+
+$$ m \approx \frac{2\left(t_{(2m_z-2)critical}-t_{(2m_z-2)\beta}\right)^2D}{n\delta^2} $$
+
+## Sample size for cluster randomized trials (no covariates) example I
+
+Suppose we expected an effect size of $\delta = 0.3$, with $n = 20$ units (students) in each cluster. We also expect to have an intraclass correlation of $\rho_{intra} = 0.2$. How many clusters per treatment group do we need to achieve power of 0.8? We start this code like the other examples,
+
+``` {r}
+n <- 20
+alpha <- .05
+power <- .8
+delta <- .3
+rho.intra <- .2
+```
+
+## Sample size for cluster randomized trials (no covariates) example II
+
+We then calculate `D` and find the number of clusters per group
+
+``` {r}
+D <- 1 + (n-1)*rho.intra 
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+m.z <- 2*(z.crit-z.beta)^2*D/(n*delta^2)
+df <- 2*ceiling(m.z) - 2
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+m <- 2*(t.crit-t.beta)^2*D/(n*delta^2)
+m
+```
+
+## Sample size for cluster randomized trials (no covariates) example III
+
+Full program (using ";" for line breaks to make it fit)
+
+``` {r}
+n <- 20
+alpha <- .05; power <- .8
+delta <- .3; rho.intra <- .2
+D <- 1 + (n-1)*rho.intra 
+z.crit <- qnorm(1-alpha/2); z.beta <- qnorm(1-power)
+m.z <- 2*(z.crit-z.beta)^2*D/(n*delta^2)
+df <- 2*ceiling(m.z) - 2
+t.crit <- qt(1-alpha/2, df); t.beta <- qt(1-power, df)
+m <- 2*(t.crit-t.beta)^2*D/(n*delta^2)
+m
+```
+
+## Minimum detectable effect size for cluster randomized trials (no covariates) I
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \delta_m \approx \sqrt{\frac{2D}{nm}}\left(t_{(2m-2)critical}-t_{(2m-2)\beta}\right) $$ 
+where
+
+$$D = 1+\left(n-1\right)\rho_{intra}$$
+
+and since we are already planning on a sample size, we know the $df = 2\times m-2$, so no further approximation is necessary
+
+## MDES example for cluster randomized trials (no covariates) I
+
+Suppose we knew that we had $n = 20$ cases per cluster and $m = 5$ clusters per group with an expected intraclass correlation of $\rho_{intra}=0.1$, and we wanted the minimum effect size for power of 0.8 ($\beta = 0.2$), for a two-tailed test with $\alpha = 0.05$ 
+
+```{r }
+n <- 20; m <- 5; df <- 2*m-2
+alpha <- .05
+power <- .8
+rho.intra <- .1
+D <- 1 + (n-1)*rho.intra 
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+delta.m <- sqrt((2*D)/(m*n))*(t.crit-t.beta)
+delta.m
+```
+
+## Power analysis for cluster randomized trials (with covariates)
+
+As with single-level designs, the use of uncorrelated covariates can help increase power. This is also true of multilevel designs 
+
+The statistical model (in mixed notation) include both the unit-level value as well as the cluster-mean
+
+$$ y_{ik(j)} = \gamma_{0}+\gamma_1T_{k(j)}+\gamma_2\left(x_{ik(j)}-\bar{x}_{k(j)}\right)+\gamma_3\bar{x}_{k(j)}+b^*_{k(j)}+e^*_{ik(j)} $$
+
+Now, the random effect variances are reduced.
+
+For example, the variance of $b^*_{k(j)}$ would be $\sigma^{2*}_b=\sigma^2_b\left(1-R^2_{cluster}\right)$,
+
+and the variance of $e^*_{ik(j)}$ would be $\sigma^{2*}_e=\sigma^2_e\left(1-R^2_{unit}\right)$
+
+
+## The design effect with covariates
+
+The key are those $R^2$ parameters; $R^2_{cluster}$ is the proportion of variance at the cluster level that is explained by the cluster-mean covariate and $R^2_{unit}$ is the proportion of variance explained by the covariate within clusters
+
+These covariates enter the _expected_ test by altering the design effect. 
+
+$$ \lambda = \delta\sqrt{\frac{nm/2}{1+\left(n-1\right)\rho_{intra}-\left(R^2_{unit}+\left(nR_{cluster}^2-R^2_{unit}\right)\rho_{intra}\right)}} $$
+
+With a covariate, the $df$ for this test is $2 \times m - 2 - 1$
+
+## Exact power plot
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.2", label = "Number units per cluster (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  sliderInput("m.2", label = "Number clusters per group (m)",
+              min = 2, max = 20, step = 1, value = 10),
+  sliderInput("es.2", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("icc.2", label = "Intraclass correlation",
+              min = 0, max = .5, value = .2, step = 0.05),
+  sliderInput("r2u.2", label = "R-square unit",
+              min = 0, max = .9, value = .0, step = 0.05),
+  sliderInput("r2c.2", label = "R-square cluster",
+              min = 0, max = .9, value = .0, step = 0.05)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "crt", 
+                 cov = "Yes",
+                 es = input$es.2, 
+                 n = input$n.2, 
+                 m = input$m.2,
+                 icc = input$icc.2,
+                 r2u = input$r2u.2,
+                 r2c = input$r2c.2,
+                 marklambda = TRUE)
+}, width = 1000, height = 300)
+
+renderText({
+  N <- input$n.2*input$m.2*2
+  paste("Total sample size = ", as.character(N))
+})
+```
+
+## Power analysis for cluster randomized trials (with covariates) example I
+
+Suppose we expected an effect size of $\delta = 0.3$, with $m = 5$ clusters (schools) in each treatment group and $n = 20$ units (students) in each cluster. We also expect to have an intraclass correlation of $\rho_{intra} = 0.2$. We also expect to have a covariate that explains half the variation at the unit level ($R^2_{unit} = .5$) and three quarters the variation at the cluster level ($R_{cluster}^2=.75$). We start this code like the other examples,
+
+```{r}
+m <- 5
+n <- 20
+df <- 2*m-2-1
+alpha <- .05
+delta <- .3
+rho.intra <- .2
+```
+
+## Power analysis for cluster randomized trials (with covariates) example II
+
+We then finish our code much the same way as the other examples, calculating `D` and $\lambda$ and finding the areas under the curve
+
+```{r}
+R2.unit <- .5
+R2.cluster <- .75
+D <- 1 + (n-1)*rho.intra - (R2.unit + (n*R2.cluster-R2.unit)*rho.intra)
+lambda <- delta*sqrt(n*m/2)*sqrt(1/D)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Power analysis for cluster randomized trials (with covariates) example III
+
+```{r}
+m <- 5
+n <- 20
+df <- 2*m-2-1
+alpha <- .05
+delta <- .3
+rho.intra <- .2
+R2.unit <- .5
+R2.cluster <- .75
+D <- 1 + (n-1)*rho.intra - (R2.unit + (n*R2.cluster-R2.unit)*rho.intra)
+lambda <- delta*sqrt(n*m/2)*sqrt(1/D)
+beta <- pt(qt(1-alpha/2,df),df,lambda) - pt(qt(alpha/2,df),df,lambda)
+power <- 1-beta
+power
+```
+
+## Sample size for cluster randomized trials (with covariates) I
+
+Like before, we need to employ a normal approximation first, then use that result for a t-distribution based estimate. 
+
+Like our code, we will organize the formulas by noting 
+
+$$D = 1+\left(n-1\right)\rho_{intra}-\left(R^2_{unit}+\left(nR_{cluster}^2-R^2_{unit}\right)\rho_{intra}\right)$$
+
+## Sample size for cluster randomized trials (with covariates) II
+
+The normal approximation is 
+
+$$ m_z \approx \frac{2\left(z_{critical}-z_{\beta}\right)^2D}{n\delta^2} $$
+and then we use the $t$ distribution
+
+$$ m \approx \frac{2\left(t_{(2m_z-2-1)critical}-t_{(2m_z-2-1)\beta}\right)^2D}{n\delta^2} $$
+
+## Sample size for cluster randomized trials (with covariates) example I
+
+Suppose we expected an effect size of $\delta = 0.3$, with $n = 20$ units (students) in each cluster. We also expect to have an intraclass correlation of $\rho_{intra} = 0.2$. We also expect to have a covariate that explains half the variation at the unit level ($R^2_{unit} = .5$) and three quarters the variation at the cluster level ($R_{cluster}^2=.75$). How many clusters per treatment group do we need to achieve power of 0.8? We start this code like the other examples,
+
+``` {r}
+n <- 20
+alpha <- .05
+power <- .8
+delta <- .3
+rho.intra <- .2
+R2.unit <- .5
+R2.cluster <- .75
+```
+
+## Sample size for cluster randomized trials (with covariates) example II
+
+We then calculate `D` and find the number of clusters per group
+
+``` {r}
+D <- 1 + (n-1)*rho.intra - (R2.unit + (n*R2.cluster-R2.unit)*rho.intra)
+z.crit <- qnorm(1-alpha/2)
+z.beta <- qnorm(1-power)
+m.z <- 2*(z.crit-z.beta)^2*D/(n*delta^2)
+df <- 2*ceiling(m.z) - 2 - 1
+t.crit <- qt(1-alpha/2, df)
+t.beta <- qt(1-power, df)
+m <- 2*(t.crit-t.beta)^2*D/(n*delta^2)
+m
+```
+
+## Sample size for cluster randomized trials (with covariates) example III
+
+Full program
+
+``` {r}
+n <- 20; alpha <- .05; power <- .8
+delta <- .3; rho.intra <- .2
+R2.unit <- .5; R2.cluster <- .75
+D <- 1 + (n-1)*rho.intra - (R2.unit + (n*R2.cluster-R2.unit)*rho.intra)
+z.crit <- qnorm(1-alpha/2); z.beta <- qnorm(1-power)
+m.z <- 2*(z.crit-z.beta)^2*D/(n*delta^2)
+df <- 2*ceiling(m.z) - 2 - 1
+t.crit <- qt(1-alpha/2, df); t.beta <- qt(1-power, df)
+m <- 2*(t.crit-t.beta)^2*D/(n*delta^2)
+m
+```
+
+## Minimum detectable effect size for cluster randomized trials (with covariates)
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \delta_m \approx \sqrt{\frac{2D}{nm}}\left(t_{(2m-2-1)critical}-t_{(2m-2-1)\beta}\right) $$ 
+
+where
+
+$$D = 1+\left(n-1\right)\rho_{intra}-\left(R^2_{unit}+\left(nR_{cluster}^2-R^2_{unit}\right)\rho_{intra}\right)$$
+
+and since we are already planning on a sample size, we know the $df = 2\times m-2-1$, so no further approximation is necessary
+
+## MDES example for cluster randomized trials (with covariates)
+
+Suppose we knew that we had $n = 20$ cases per cluster and $m = 5$ clusters per group with an expected intraclass correlation of $\rho_{intra}=0.1$. We also expect to have a covariate that explains half the variation at the unit level ($R^2_{unit} = .5$) and three quarters the variation at the cluster level ($R_{cluster}^2=.75$). We want the minimum effect size for power of 0.8 ($\beta = 0.2$), for a two-tailed test with $\alpha = 0.05$ 
+
+```{r }
+n <- 20; m <- 5; df <- 2*m-2 -1; alpha <- .05; power <- .8
+rho.intra <- .1; R2.unit <- .5; R2.cluster <- .75
+D <- 1 + (n-1)*rho.intra - (R2.unit + (n*R2.cluster-R2.unit)*rho.intra)
+t.crit <- qt(1-alpha/2, df); t.beta <- qt(1-power, df)
+delta.m <- sqrt((2*D)/(m*n))*(t.crit-t.beta); delta.m
+```
+
+## Explore!
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.3", label = "Number units per cluster (n)",
+              min = 2, max = 50, step = 1, value = 25),
+  sliderInput("m.3", label = "Number clusters per group (m)",
+              min = 2, max = 50, step = 1, value = 10),
+  sliderInput("es.3", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("icc.3", label = "Intraclass correlation",
+              min = 0, max = .5, value = .2, step = 0.05),
+  sliderInput("r2u.3", label = "R-square unit",
+              min = 0, max = .9, value = .0, step = 0.05),
+  sliderInput("r2c.3", label = "R-square cluster",
+              min = 0, max = .9, value = .0, step = 0.05)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "crt", 
+                 cov = "Yes",
+                 es = input$es.3, 
+                 n = input$n.3, 
+                 m = input$m.3,
+                 icc = input$icc.3,
+                 r2u = input$r2u.3,
+                 r2c = input$r2c.3,
+                 marklambda = TRUE)
+}, width = 1000, height = 300)
+
+renderText({
+  N <- input$n.3*input$m.3*3
+  paste("Total sample size = ", as.character(N))
+})
+```
+
+
