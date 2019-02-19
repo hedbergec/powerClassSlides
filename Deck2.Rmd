@@ -19,7 +19,7 @@ source("functions.R")
 
 ## Introduction
 
-In many cases researchers want to understand whether a "treatment" is associated with a better or worse outcome. 
+In many cases researchers want to understand whether a "treatment" is associated with a better or worse outcome relative to a "control" condition. 
 
 This lends itself to be a natural fit for the independent-samples t-test, where we test the means of 
 
