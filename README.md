@@ -1,6 +1,8 @@
 # powerClassSlides
 
-These slides are designed for a day-long course on power analysis. 
+These slides are designed for a day-long course on power analysis. It supports the book I wrote on power analysis, available here:
+
+https://us.sagepub.com/en-us/nam/introduction-to-power-analysis/book250725
 
 Here is an abstract of the course:
 
