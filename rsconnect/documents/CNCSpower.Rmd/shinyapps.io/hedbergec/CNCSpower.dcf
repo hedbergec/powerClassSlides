@@ -1,0 +1,12 @@
+name: CNCSpower
+title: CNCSpower
+username:
+account: hedbergec
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1169696
+bundleId: 2415674
+url: https://hedbergec.shinyapps.io/CNCSpower/
+when: 1568582079.36568
+asMultiple: FALSE
+asStatic: FALSE

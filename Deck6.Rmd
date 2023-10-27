@@ -6,7 +6,7 @@ output:
   ioslides_presentation: 
     fig_retina: null
     highlight: pygments
-    incremental: yes
+    incremental: no
     smart: no
     transition: faster
     widescreen: yes

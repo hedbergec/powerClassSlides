@@ -9,7 +9,7 @@ sim <- function(delta, n) {
 errorPlot <- function(delta, n, alpha = .05, legend = TRUE) {
   df <- 2*n - 2
   ct <- qt(alpha/2, df, lower.tail = FALSE)
-  results <- replicate(6000, sim(delta,n))
+  results <- replicate(5000, sim(delta,n))
   ct <- qt(alpha/2, df, lower.tail = FALSE)
   if (delta == 0) {
     histmax <- max(table(round(results , digits = 1)))
@@ -22,6 +22,7 @@ errorPlot <- function(delta, n, alpha = .05, legend = TRUE) {
     hist(round(results, digits = 1),
          main = NA,
          xlab = NA,
+         col = "white" ,
          breaks = seq(from = min(round(results, digits = 1)),
                       to = max(round(results, digits = 1)), by = .1),
          ylim = c(0,300),xlim = c(-5,5))
@@ -56,6 +57,7 @@ errorPlot <- function(delta, n, alpha = .05, legend = TRUE) {
     hist(round(results, digits = 1),
          main = NA,
          xlab = NA,
+         col = "white" ,
          breaks = seq(from = min(round(results, digits = 1)),
                       to = max(round(results, digits = 1)), by = .1),
          ylim = c(0,300),

@@ -1,0 +1,880 @@
+---
+title: "Intro to Statistical Power for Randomized Trials"
+author: "Eric Hedberg, PhD"
+output:
+  slidy_presentation:
+    highlight: pygments
+    incremental: no
+    smart: yes
+    transition: faster
+    widescreen: yes
+runtime: shiny
+resource_files:
+- PPSS.jpg
+---
+
+```{r, include=FALSE}
+source("functions.R")
+set.seed(101)
+```
+
+## What is power?
+
+_The power of a statistical test is the probability that it will yield statistically significant results_;
+Cohen (1988)
+
+Power is the portion of the expected sampling distribution that will exceed the critical value of the test
+
+Power is based on the critical value of the test and the sampling distribution of the test if the alternative is true.
+
+The test's sampling distribution is a function of
+
+- the size of the effect relative to its variation
+- the sample size
+- the sample design and sample parameters (our focus here is a simple random sample)
+
+# Sampling Distributions
+
+## Samples, Statistics, Populations, Parameters
+
+The whole point of statistics are to estimate population parameters using results from samples
+
+![PPSS](PPSS.jpg)
+
+## Inference
+
+The question is, how do we judge our estimates?
+
+The answer is sampling distributions. 
+
+To illustrate a sampling distribution, let's first manufacture a population of test scores. Here are the first 100 of 1,000
+
+```{r, echo=FALSE}
+test.scores <- round(rnorm(1000,mean = 500, sd = 100))
+test.scores[1:60]
+```
+
+the true mean is `r mean(test.scores)`.
+
+## A single sample
+
+Let's draw a 25 unit sample from this population and estimate the mean
+
+```{r, echo=FALSE}
+samp <- sample(test.scores, 25)
+samp
+```
+the mean of the sample is `r mean(samp)`. Not exactly the true mean, which is `r mean(test.scores)`.
+
+## Another sample
+
+Let's get another sample of 25 units
+
+```{r, echo=FALSE}
+samp <- sample(test.scores, 25)
+samp
+```
+the mean of the sample is `r mean(samp)`. Not exactly the true mean, which is `r mean(test.scores)`.
+
+## Bunches of samples
+
+What if we drew 100 samples of 25? Here is the list of means
+
+```{r, echo=FALSE}
+sampmeans <- replicate(100, mean(sample(test.scores, 25)))
+round(sampmeans, digits = 1)
+```
+
+The mean of our sample means is `r mean(sampmeans)` pretty close to the "true" mean (`r mean(test.scores)`)!
+
+
+## Sampling distribution
+
+What is the _sampling_ distribution of these samples' means?
+
+```{r, echo=FALSE}
+hist(sampmeans, breaks = 10)
+```
+
+It is normal!
+
+## Standard error
+
+The standard deviation of the sampling distribution is the standard error
+```{r, echo=FALSE}
+sd(sampmeans)
+```
+
+which, for means, is what we estimate with 
+
+$\sigma_{\bar{y}} = \frac{\sigma_y}{\sqrt{N}}$
+
+# Hypothesis testing
+
+## Hypothesis testing
+
+- We wish to infer the results of a study to a population.
+- We assume a particular worldview, the null hypothesis, and evaluate the likelihood that our data (or more extreme*) originate from that worldview.
+- Fisher (1920): p-values are the likelihood of observing the result or one more extreme given the null hypothesis is true.
+- Neyman & Pearson (1933): Hypothesis testing procedure that sets acceptable Type I and Type II error rates and compares the test statistic with a priori values.
+- Power analysis is based on hypothesis testing and the selected error rates.
+
+[Jean Biau, et al. "P Value and the Theory of Hypothesis Testing.", (2010)](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2816758/pdf/11999_2009_Article_1164.pdf)
+
+## Types of error
+
+* Type I error ($\alpha$): the chance of falsely rejecting the null hypothesis; convention = 0.05.
+    * however, [some want the convention lower (0.005)](https://www.nature.com/articles/s41562-017-0189-z)
+* Type II error ($\beta$): the chance of falsely accepting the null hypothesis; convention = 0.20.
+* Power is the chance of correctly rejecting the null hypothesis when alternative is true ($1-\beta$).
+
+## Understanding error
+
+What exactly does $\alpha$ mean? 
+
+If we set $\alpha$ at 0.05, then it means that 5 out of 100 false hypotheses will show up significant. 
+
+On the next slide, we will run a simulation and graph how many of the results are past the critical value
+
+We are creating a data set with two groups that are the same, on average, and running a t-test to see if there is a difference (there should not be). We then do this again, and again, 5,000 times.
+
+```{r, eval=FALSE, echo=FALSE}
+sim <- function(delta, n) {
+  y.0 <- rnorm(n, mean = 0) #cases in control
+  y.1 <- rnorm(n, mean = delta) #cases in treatment
+  test <- t.test(y.1,y.0, var.equal = TRUE) #the test
+  return(t = test$statistic) #return the result
+}
+```
+
+## Type I error
+
+About 5 percent of the time, we have a statistially significant result if we test at the 5 percent level--even though there is no real effect. This happens no matter what the sample size. 
+
+## Type I error
+
+The plot below is the result of 5,000 made up datasets' tests
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.1", label = "sample size in each group",
+              min = 2, max = 100, value = 30, step = 2)
+)
+renderPlot({
+  errorPlot(0, input$n.1)
+})
+
+```
+
+## Understanding error
+
+What exactly does $\beta$ mean? 
+
+Type II error is the chance that our test result will fall short of the critical value when the alternative is in fact true.
+
+In other words, if the effect exists, how often will it fail to be statistically significant?
+
+On the next slide, we will run another simulation and graph how many of the results fall short when we know the effect size is not zero
+
+## Type II error
+
+Type II error is sensitive to changes in the sample size and effect size 
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.2", label = "sample size in each group",
+              min = 2, max = 100, value = 30, step = 2),
+  
+  sliderInput("delta.2", label = "effect size",
+              min = 0, max = 1, value = .1, step = 0.1)
+)
+
+renderPlot({
+  errorPlot(input$delta.2, input$n.2)
+})
+
+```
+
+## Sampling distribution curves
+
+For many tests used in research, we do not need to run simulations to determine the chance of error. 
+
+We can use formulas and computers to determine power.
+
+It's all about areas under curves...
+
+## Errors from theoretical curves vs. simulation
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.3", label = "Number per group",
+              min = 5, max = 100, step = 1, value = 25),
+  
+  sliderInput("es.3", label = "Effect size",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+
+
+renderPlot({
+  par(mfrow = c(1,2))
+  exactPowerPlot(type = "srs", es = input$es.3, n = input$n.3)
+  errorPlot(input$es.3, input$n.3, legend = TRUE)
+}, width = 1000, height = 350)
+
+```
+
+## Why do power analyses?
+
+Reasons for funders:
+
+* Interventions (and their evaluations) cost money.
+* When the sample size is too small, and test is not significant, the answer is inconclusive and resources are wasted.
+
+Reasons for science:
+
+* Under powered studies cede the proportion of published results to random chance findings.
+  
+## Replication crisis
+  
+- Many results from experiments could be false, and low power contributes to this. 
+
+    * [The Economist. "Why most published scientific research is probably false." (2015); based on John Ioannidis (2005)](http://www.economist.com/blogs/graphicdetail/2013/10/daily-chart-2) 
+
+- For example, less than half of replicated psychology results were significant. 
+
+    * [Open Science Collaboration. "Estimating the reproducibility of psychological science." (2015)](http://www.sciencemag.org/content/349/6251/aac4716.short)
+
+- This not only hurts science, but also scientists
+
+    * [New York Times. "When the revolution came for Amy Cuddy." (2017)](https://www.nytimes.com/2017/10/18/magazine/when-the-revolution-came-for-amy-cuddy.html) 
+
+- If we are not powered to find the true answers, $\alpha = 0.05$ will provide random answers to publish that will not be replicated. 
+
+## What gets published? 
+
+Suppose we only published significant results. 
+
+[John Ioannidis](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1182327/) worked out formulas that relate the significance level ($\alpha$), power ($1-\beta$), and the proportion of hypotheses tested that are true ($p$), to the chance that a published finding is false. If $R = \frac{p}{1-p}$ 
+
++---------------------------------------+---------------------------------------+
+|Published                              | Not Published                         |
++---------------------------------------+---------------------------------------+
+|Truly sig. = $\frac{(1-\beta)R}{R+1}$  | Truly Null = $\frac{1-\alpha}{R+1}$  |
++---------------------------------------+---------------------------------------+
+|Type I err. = $\frac{\alpha}{R+1}$     | Type II err. = $\frac{\beta R}{R+1}$  |
++---------------------------------------+---------------------------------------+
+
+The next slide works with these formulas to show how low power helps us miss true findings and allow a portion of false findings crowd the journal pages.  
+
+## How does low power contribute to false findings?
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("a", label = "alpha",
+              min = .001, max = .1, step = .001, value = .05),
+  
+  sliderInput("b", label = "power",
+              min = 0.2, max = .9, value = .5, step = 0.1),
+  sliderInput("p", label = "Proportion hypotheses tested that are true",
+              min = 0.025, max = .8, value = .2, step = 0.025)
+  )
+renderPlot({
+  replicationPlot(input$a, 1-input$b, input$p) 
+})
+```
+
+## When to do power analyses
+
+Before you start your study.
+
+Power analyses guide sample design and study expectations __before__ data are collected. 
+
+Once the data are collected, power analyses do not change the results. A power analysis does not negate a significant result. 
+
+At best, power analyses are a post mortem for insignificant results. 
+
+# Doing Power Analysis
+
+## Introduction
+
+In many cases researchers want to understand whether a "treatment" is associated with a better or worse outcome relative to a "control" condition. 
+
+This lends itself to be a natural fit for the independent-samples t-test, where we test the means of 
+
+* a treatment group
+* a control or counter-factual group
+
+against each other
+
+Power analysis is very important in designing such a trial
+
+## Balancing three things
+
+Power analyses include three tasks:
+
+* Finding the power for an effect size with a sample size.
+* Finding the sample size necessary to get a level of power for an effect size.
+* Finding the lowest effect size possible with a given sample size and power.
+
+Doing any of these tasks requires mastery of the test statistic in question. 
+
+## A linear model
+
+Here is a simple linear model about how we can think the outcome data are generated
+
+\[
+y_{ij} = \mu+ \tau_j + e_{ij}
+\]
+
+where $y$ is the outcome for unit (e.g., person) $i$ in treatment group $j$, which is a function of 
+
+* some grand mean $\mu$
+* the effect of being in treatment $j$ ($\tau_j = \mu_j - \mu$)
+* and $e_{ij}$ is the within-group residual error, or the other factors that influence the outcome of unit $i$ in group $j$ ($e_{ij} = y_{ij} - \mu_j$)
+
+## Important parameters
+
+We assume that each observation from each treatment group is drawn from a population with the same variance 
+
+$$ e \sim N(0,\sigma^2) $$  
+
+If this variance were known, and we denote the mean of the treatment group as $\mu_1$ and the mean of the control group as $\mu_0$, then the estimated difference between the means (i.e., $\bar{y}_1 - \bar{y}_0$) would be normally distributed with a mean of the population difference, $\mu_1-\mu_0$ and variance $\sigma^2\frac{2}{n}$,  
+
+\[
+	\bar{y}_1 - \bar{y}_0 \sim N\left[\mu_1-\mu_0, \sigma^2\frac{2}{n}\right].
+\]
+
+# Standard normal test (z-test)
+
+## The test where $\sigma^2$ is known
+
+If $\bar{y}_1$ is the mean for the intervention group and $\bar{y}_0$ is the mean of the control group, and each group has $n$ observations (i.e., balanced data), then
+
+$$\bar{y}_1 - \bar{y}_0 \sim N\left[\mu_1-\mu_0,\sigma^2\frac{2}{n}\right]$$
+
+Thus, to get the p-value, you calculate the z-score of the observed difference in the means as it relates to the null hypothesis and the variance of the mean difference.
+
+$$ z = \frac{(\bar{y}_1 - \bar{y}_0)-\mbox{Null hypothesis}}{\sqrt{\sigma^2\frac{2}{n}}} $$
+If $z$ is greater in magnitude than the critical value, you reject the null. We usually say the null hypothesis is 0
+
+## Effect sizes and scale free parameters
+
+This test statistic 
+$$ z = \frac{(\bar{y}_1 - \bar{y}_0)}{\sqrt{\sigma^2\frac{2}{n}}} $$
+uses parameters in the scale of the outcome, namely $y$ and $\sigma$. 
+
+These exact values are hard to anticipate. We can simplify this test by using the _effect size_ quantity $\delta$, defined as (Cohen)
+
+$$ \delta = \frac{\bar{y}_1 - \bar{y}_0}{\sigma} $$
+
+## Non-centrality parameter
+
+This leads us to the _expected_ test statistic, $\lambda$, as a function of effect size and sample size
+
+$$ \lambda = \frac{(\bar{y}_1 - \bar{y}_0)}{\sqrt{\sigma^2\frac{2}{n}}} = \delta\sqrt{\frac{n}{2}}$$
+
+where
+
+$$ \delta = \frac{\bar{y}_1 - \bar{y}_0}{\sigma} $$
+
+We use the _expected_ test statistic as the _mean_ of the alternative distribution
+
+## Power analysis
+
+Power analysis is tied to Type II error ($\beta$), or the chance that we accept the null hypothesis when in fact the alternative is true. 
+
+ For example, if our alternative hypothesis states that $\bar{y}_1 - \bar{y}_0 \ne 0$, and our two-tailed test sets $\alpha = 0.05$, our critical value of $z$ is $\pm 1.96$. Power asks what is the chance that our sample will produce something equal to or higher in magnitude than $1.96$
+ 
+In other words, Type II error (the complement of power) asks what is the chance that our test statistic  winds up less than 1.96 in magnitude, even though the alternative hypothesis is true?
+
+
+## Logic of power analysis
+
+To answer this question, we suppose some expected test result ($\lambda$), then draw an _alternative_ sampling distribution around that expected test result where the mean of the distribution is $\lambda$. 
+
+## Logic of power analysis
+
+Noting where the critical value falls, Type II error ($\beta$) for a two-tailed test is simply the area of the _alternative_ distribution between the critical values. The following graph is for $\delta = 0.25$ and $n = 30$
+``` {r, echo = FALSE}
+renderPlot({
+  exactPowerPlot(type = "srs", es = .5, n = 30, marklambda = TRUE)
+})
+```
+
+## All about the test
+
+So, the _expected_ test is what determines power. The alternative distribution is governed by its mean, the _noncentrality parameter_, $\lambda$
+$$\mbox{Expected test} = \lambda = \underbrace{\delta}_\text{Effect size}\underbrace{\sqrt{\frac{n}{2}}}_\text{Sample size}$$
+
+The goal is to break down the expected test into scale-free parameters that don't require knowledge about the unit of measurement. We can figure out the anatomy of the test by looking at the "Statistics 101" regression formula. 
+
+## Example
+
+See how $\lambda = \delta\sqrt{n/2}$ changes with the sample size ($n$) and effect size ($\delta$)
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.4", label = "Number per group (n)",
+              min = 5, max = 100, step = 1, value = 25),
+  
+  sliderInput("es.4", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.4, n = input$n.4, marklambda = TRUE)
+})
+```
+
+
+## Typical critical values
+
+```{r, echo = FALSE}
+inputPanel(
+  selectInput("alpha.1", "Pick alpha",choices = c(0.1,.05,.01,.001), selected = .05),
+  selectInput("tails", "Pick tails", choices = c(1,2), selected = 2)
+)
+
+renderText({
+  paste("Critical value for positive difference=",as.character(qnorm(1-as.numeric(input$alpha.1)/as.numeric(input$tails))))
+})
+
+renderPlot({
+  plot(seq(from=-4, to=4, by= .01 ), dnorm(seq(from=-4, to=4, by= .01 )), 
+       type = "l", xlab = "z", ylab = "density")
+  if (input$tails == "1") {
+    abline(v = c(qnorm(1-as.numeric(input$alpha.1)/as.numeric(input$tails))))
+  }
+  else {
+    abline(v = c(qnorm(as.numeric(input$alpha.1)/as.numeric(input$tails)),qnorm(1-as.numeric(input$alpha.1)/as.numeric(input$tails))))
+  }
+  
+})
+
+```
+
+## Critical values and power
+
+How does $\alpha$ influence $\beta$ (and $1-\beta=$ power)? Two-tailed example
+
+```{r, echo = FALSE}
+inputPanel(
+  selectInput("alpha.5", "Pick alpha",choices = c(0.1,.05,.01,.001), selected = .05),
+  sliderInput("n.5", label = "Number per group (n)",
+              min = 5, max = 100, step = 1, value = 25),
+  
+  sliderInput("es.5", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.5, n = input$n.5, alpha = as.numeric(input$alpha.5))
+})
+```
+
+## Computing power with the standard normal curve
+
+Once we have an effect size and sample size, we can compute $\lambda$. When we pick $\alpha$ and the number of tails, we get the critical value $z$. With $\lambda$, $z$, and the CDF ($\Phi$), we can compute $\beta$
+
+One tailed $\beta$ is $\beta = \Phi\left(z_{1-\alpha}-\lambda\right)$
+
+Two tailed $\beta$ is $\beta = \Phi\left(z_{1-\alpha/2}-\lambda  \right)-\Phi\left(z_{\alpha/2}- \lambda  \right)$
+
+which is simply giving us the area of the alternative distribution by subtraction.
+
+Power is then simply $1-\beta$
+
+## Useful relationships
+
+Given a standard normal distribution, we can use the power formulas to calculate useful quantities. For example, consider the Type II error ($\beta$) for a one-tailed test. 
+$$ \beta = \Phi\left(z_{1-\alpha}-\lambda\right) $$
+Here, $\beta$ is an area of the normal curve. Thus, we can reverse the $\Phi$ on both sides of the equation to reveal a quantile of the standard normal distribution, $z_{\beta}$
+$$ z_{\beta} = z_{1-\alpha}-\lambda, $$
+And now, the expected test is a function of the two $z$ quantiles
+$$ \lambda = z_{1-\alpha}-z_{\beta}. $$
+
+## Needed sample size for two-tailed tests (normal curve)
+
+Recall that the Type II error for a two tailed test is
+
+$$\beta = \Phi\left(z_{1-\alpha/2}-\lambda  \right)-\Phi\left(z_{\alpha/2}- \lambda  \right)$$
+
+Which poses problems we because we are subtracting two $\Phi$ functions (it we can't just reverse it on both sides). However, we are lucky because the second term, $\Phi\left(z_{\alpha/2}- \lambda  \right)$ is usually really small. Thus, in practice, we ignore it. 
+
+That makes the useful relationship a function of the critical value
+
+$$ \lambda =\delta\sqrt{\frac{n}{2}} \approx z_{critical}-z_{\beta} \mbox{ , and so, } n \approx \frac{2(z_{critical}-z_{\beta})^2}{\delta^2} $$ 
+
+For $\alpha = .05$ (two-tailed test) and .8 power ($\beta = .2$), $z_{critical}-z_{\beta}=2.8$.
+
+## Minimum detectable effect size (MDES, normal curve)
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \lambda = \delta\sqrt{\frac{n}{2}} \approx z_{critical}-z_{\beta} \mbox{ , and so, } \delta_m = \sqrt{\frac{2}{n}}(z_{critical}-z_{\beta}) $$ 
+
+For $\alpha = .05$ (two-tailed test) and .8 power ($\beta = .2$), $z_{critical}-z_{\beta}=2.8$.
+
+# The t-test 
+
+## Test where $\sigma^2$ is unknown
+
+Usually, we do not know the value of $\sigma^2$
+
+However, once we estimate $\sigma^2$ from the data, the test is the same
+
+$$ \lambda = \frac{(\bar{y}_1 - \bar{y}_0)}{\sqrt{\hat{\sigma}^{2}\frac{2}{n}}} = \delta\sqrt{\frac{n}{2}}$$
+
+where
+
+$$ \delta = \frac{\bar{y}_1 - \bar{y}_0}{\hat{\sigma}} $$
+
+## Analysis
+
+This analysis can be accomplished using a least-squares approach like regression (or a simple t-test routine).
+
+The statistical regression model for case $i$ in experimental group $j$ is
+
+$$ y_{ij} = \gamma_0 + \gamma_1 T_{ij} + e_{ij} $$
+
+where $$ T_{ij} = \left\{ \begin{array}{ll}
+   0 & \mbox{if Control};\\
+   1 & \mbox{if Treatment}.\end{array} \right. \mbox{ and  } e_{ij} \sim N(0, 
+   \sigma^2) $$
+
+Note that the variance of the residuals is the estimate of the population variance without treatments.
+
+## Degrees of freedom (I)
+
+We test $\gamma_1 = 0$ using the $t$ distribution
+
+The distribution of the $t$-test is related to the $z$ distribution
+
+$$ t = \frac{Z}{\sqrt{\frac{1}{\nu}\sum_{i=1}^\nu Z_i^2}} $$
+where $\nu$ is the degrees of freedom parameter. 
+
+
+## Degrees of freedom (II)
+
+Degrees of freedom is sometimes a difficult concept. Essentially, it is the number of values that can vary once we know a statistic about the value. 
+
+For example, given the values 5 and 7, if we know the mean is 6, then we really only have 1 piece of information in the set {5,7}. This is because if I tell you that we have 2 numbers, 7 and an unknown number $a$, but that the mean is 6, we can figure out the unknown number with 
+$$ 6 = \frac{7+a}{2}, a = 6\times2-7 = 5 $$
+
+The degrees of freedom for this test is $2n-2$ because we estimate a mean for treatment and a mean for control
+
+## The t-distribution changes with the degrees of freedom
+
+```{r, echo = FALSE}
+t <- seq(-3, 3, by = .01)
+plot(t, dnorm(t), type = "l", lty = 1)
+lines(t, dt(t, 1), type = "l", lty = 2)
+lines(t, dt(t, 2), type = "l", lty = 3)
+lines(t, dt(t, 3), type = "l", lty = 4)
+legend(-3, .4, c("Norm", "t, df = 1", "t, df = 2", "t, df = 3"), lty = c(1,2,3,4))
+
+```
+
+## The the t-distribution critical values
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("df.3", "Pick df",min = 1, max = 30, value = 3),
+  selectInput("alpha.3", "Pick alpha",choices = c(0.1,.05,.01,.001), selected = .05),
+  selectInput("tails.3", "Pick tails", choices = c(1,2), selected = 2)
+)
+
+renderText({
+  paste("Critical value for positive difference (t) =",
+        as.character(qt(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3), input$df.3)))
+})
+renderText({
+  paste("Critical value for positive difference (z) =",
+        as.character(qnorm(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3))))
+})
+
+renderPlot({
+  plot(seq(from=-4, to=4, by= .01 ), dt(seq(from=-4, to=4, by= .01 ), input$df.3), 
+       type = "l", xlab = "t", ylab = "density", lty = 1, ylim = c(0,.4))
+  lines(seq(from=-4, to=4, by= .01 ), dnorm(seq(from=-4, to=4, by= .01 )), 
+       type = "l", xlab = "t", ylab = "density", lty = 2, ylim = c(0,.4))
+  if (input$tails.3 == "1") {
+    abline(v = qt(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3),input$df.3), lty = 1)
+    abline(v = qnorm(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3)), lty = 2)
+  }
+  else {
+    abline(v = c(
+      qt(as.numeric(input$alpha.3)/as.numeric(input$tails.3), input$df.3),
+      qt(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3), input$df.3)
+      ), lty = 1
+      )
+    abline(v = c(
+      qnorm(as.numeric(input$alpha.3)/as.numeric(input$tails.3)),
+      qnorm(1-as.numeric(input$alpha.3)/as.numeric(input$tails.3))
+      ), lty = 2
+      )
+  }
+  legend(-4, .3, c("t-dist critical", "norm critical"), lty = c(1,2))
+})
+
+```
+
+
+## Power and the t-distribution
+
+```{r, echo = FALSE}
+inputPanel(
+  selectInput("alpha.6", "Pick alpha", choices = c(0.1,.05,.01,.001), selected = .05),
+  sliderInput("n.6", label = "Number per group (n)",
+              min = 2, max = 100, step = 1, value = 10),
+  
+  sliderInput("es.6", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.6, n = input$n.6, alpha = as.numeric(input$alpha.6))
+})
+```
+
+## Computing power with the t distribution
+
+Once we have an effect and sample size, we can compute $\lambda$. When we pick $\alpha$, assume two-tails, and compute the df, we get the critical value $t_{critical}$. 
+
+However, the task is slightly different for the $t$ distribution compared with the $z$ distribution
+
+With $\lambda$, the degrees of freedom, and $t_{critical}$ we can compute $\beta$ using the CDF of the non-central $t$ distribution. 
+
+Power is then $1-\beta$
+
+## Using the non-central t distribution
+
+We need a non-central CDF computer for this task. We can note it as "H" and say that Type II error for a one-tailed positive test is 
+
+$$ \beta = \underbrace{H\left[t_{(df)1-\alpha},df,\lambda\right]}_\text{Area before right critical value} $$
+
+and for a two-tailed test it is
+
+$$ \beta = \underbrace{H\left[t_{(df)1-\frac{\alpha}{2}},df,\lambda\right]}_\text{Area before right critical value}-\underbrace{H\left[t_{(df)\frac{\alpha}{2}},df,\lambda\right]}_\text{Area before left critical value} $$
+
+where $H\left[a,b,c\right]$ is the cumulative distribution function (CDF) of the _non-central_ $t$ distribution at point $a$ with $b=df=2n-2$ degrees of freedom and non-centrality parameter $c=\lambda$; $t_{(df)q}$ is the $q^{th}$ quantile of the central $t$-distribution associated with the degrees of freedom (i.e., the critical value). 
+
+
+## Needed sample size for t-tests
+
+Recall that for the normal distribution, the useful relationship a function of the critical value
+
+$$ \lambda =\delta\sqrt{\frac{n}{2}} \approx z_{critical}-z_{\beta} \mbox{ , and so, } n \approx \frac{2(z_{critical}-z_{\beta})^2}{\delta^2} $$ 
+
+This trick will not work because to get the critical value of $t$, we need to know the $df$, which is based on the sample size. 
+
+However, we can use the result from the normal approximation ($n_z$) as a start, then use that answer for the $df$ in a similar formula
+
+$$ n \approx \frac{2\left(t_{(2n_z-2)critical}-t_{(2n_z-2)\beta}\right)^2}{\delta^2} $$
+
+
+## Minimum detectable effect size (MDES, t distribution)
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \lambda = \delta\sqrt{\frac{n}{2}} \approx \left(t_{(2n-2)critical}-t_{(2n-2)\beta}\right), $$
+
+$$ \mbox{and so, } \delta_m \approx \sqrt{\frac{2}{n}}\left(t_{(2n-2)critical}-t_{(2n-2)\beta}\right) $$ 
+
+and since we are already planning on a sample size, we know the $df$, so no further approximation is necessary
+
+# Intuitions
+
+## How does power vary with sample size and effect size?
+
+Suppose a two-tailed test with $\alpha = 0.05$
+
+``` {r, echo = FALSE}
+curve(powervalues(x,.5,.05), 
+      from = 2, to = 100, lty = 1,
+      ylim=range(c(0,1)), 
+      ylab = "Power", xlab = "n")
+par(new = TRUE)
+curve(powervalues(x,1,.05), 
+      from = 2, to = 100, lty = 2,
+      ylim=range(c(0,1)), ylab = "Power",
+      xlab = "n")
+legend(70,.6, legend = (c(expression(delta),"0.50","1.00")),
+       lty = c(NA,1,2))
+```
+
+
+## How does MDES vary with sample size and power?
+
+``` {r, echo = FALSE}
+curve(mdesvalues(x,.7,.05), 
+      from = 2, to = 30, lty = 1,
+      ylim=range(c(0,6)), 
+      ylab = "MDES", xlab = "n")
+par(new = TRUE)
+curve(mdesvalues(x,.9,.05), 
+      from = 2, to = 30, lty = 2,
+      ylim=range(c(0,6)), 
+      ylab = "MDES", xlab = "n")
+legend(20,6, legend = (c("Power",".7",".9")),
+       lty = c(NA,1,2))
+```
+
+## Explore!
+
+```{r, echo = FALSE}
+inputPanel(
+  selectInput("alpha.7", "Pick alpha", choices = c(0.1,.05,.01,.001), selected = .05),
+  sliderInput("n.7", label = "Number per group (n)",
+              min = 2, max = 100, step = 1, value = 10),
+  
+  sliderInput("es.7", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1
+))
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.7, 
+                 n = input$n.7, 
+                 alpha = as.numeric(input$alpha.7),
+                 marklambda = TRUE)
+})
+```
+
+[or use this app](https://hedbergec.shinyapps.io/powerClassApp/)
+
+# Covariates
+
+## Analysis of Covariance (ANCOVA)
+
+ANCOVA is like ANOVA, except it includes a covariate to explain away variation in the outcome. This reduces the error variance ($\sigma^2$) proportional to $\left(1-\rho_{yx,w}^2\right)$ which makes the test larger.
+
+$$ \lambda = \frac{(\bar{y}_1 - \bar{y}_0)}{\sqrt{\hat{\sigma}^2\frac{2}{n}}}\sqrt{ \frac{1}{\left(1-\rho_{yx}^2\right)}}$$
+$\rho_{yx}$ is the population correlation between the outcome and covariate, the larger $\rho_{yx}$ is, smaller $\sigma^2$ will be 
+
+From a regression point of view, ANCOVA is simply a regression that uses a dummy variable for treatment ($T$) and adds a control variable ($x$).
+
+$$ y_i = \gamma_0 + \gamma_1 T_i + \gamma_2 x_i + \epsilon_i $$
+
+## Random assignment (or really good matching)
+
+While a covariate will always decrease the error variance, it will not always help if it is correlated with the treatment indicator. 
+
+$$cov(T,x) \ne 0 \mbox{   is bad} $$
+This is for two reasons. 
+
+## Reason 1 that cov(T,x) is bad
+
+Suppose $\phi_1$ is the population slope for $x$ predicting $y$, the estimate of the difference between the groups' averages becomes
+
+$$\hat{\gamma}_1 = \left(\bar{y}_1-\bar{y}_0\right) - \phi_1\left(\bar{x}_1-\bar{x}_0\right)$$
+which is the raw difference in means ($\bar{y}_1-\bar{y}_0$) minus $\phi_1$ times the imbalance in the covariate between treatment and control ($\bar{x}_1-\bar{x}_0$). 
+
+When the mean of $x$ is the same for treatment and control, $\hat{\gamma}_1 = \left(\bar{y}_1-\bar{y}_0\right)$, if not, and $x$ is correlated with the outcome, the effect size drops.
+
+It is bad when there is a lot of imbalance, it's worse when the covariate is also really correlated with the outcome
+
+So a pretest that is highly correlated with the outcome AND imbalanced will derail your study 
+
+## Reason 2 that cov(T,x) is bad
+
+The variance of the treatment effect will increase proportional to $\frac{1}{1-\rho_{Tx}^2}$, which is known as the variance inflation factor (VIF)
+
+That is, in multivariate regression, the standard errors inflate proportional to the correlations among the predictors. 
+
+Thus, not only will your effect drop, so too will your standard error get higher!
+
+
+## How to avoid cov(T,x)
+
+1) The best method to avoid any correlation between $T$ and $x$ is to make $T$ exogenous through random assignment. 
+
+In other words, if you randomly assign $T$, it will not be highly correlated with _anything_.
+
+2) Matching is next best...but there is no way to avoid some correlation because of spurious relationships with unobserved variables. 
+
+## Test statistics
+
+The _expected_ test statistic for ANCOVA, and the $\lambda$ to use in power is
+
+$$ \lambda = \underbrace{\frac{\left(\mu_1-\mu_0\right) - \phi_1\left(\bar{x}_1-\bar{x}_0\right)}{\sigma}}_\text{Adjusted Effect size}\underbrace{\sqrt{\frac{n}{2}\frac{2n-3}{2n-2}}}_\text{Sample size}\underbrace{\sqrt{1-\rho_{Tx}^2}}_\text{Multicolinearity}\underbrace{\sqrt{\frac{1}{\left(1-\rho_{yx}^2\right)}}}_\text{Covariate effect} $$
+but if there is no correlation between treatment and the covariate, $\bar{x}_1-\bar{x}_0 = 0$ and thus $\rho_{Tx} = 0$, we can work with 
+
+$$ \lambda = \underbrace{\frac{\left(\mu_1-\mu_0\right)}{\sigma}}_\text{Effect size}\underbrace{\sqrt{\frac{n}{2}\frac{2n-3}{2n-2}}}_\text{Sample size}\underbrace{\sqrt{\frac{1}{\left(1-\rho_{yx}^2\right)}}}_\text{Covariate effect}$$
+
+## Finding power 
+
+We now have a new parameter, $\rho_{yx}$ to add to our power computations. The game is the same, find $\beta$
+
+$$ \beta = \underbrace{H\left[t_{(df)1-\frac{\alpha}{2}},df,\lambda\right]}_\text{Area before right critical value}-\underbrace{H\left[t_{(df)\frac{\alpha}{2}},df,\lambda\right]}_\text{Area before left critical value} $$
+Except now, the formula for $\lambda$ is different
+
+$$ \lambda = \delta\sqrt{\frac{n}{2}\frac{2n-3}{2n-2}}\sqrt{\frac{1}{\left(1-\rho_{yx}^2\right)}} $$
+
+and the degrees of freedom are one less, $df = 2\times n - 2 - 1$
+
+## Adding $\rho_{yx}$ to the power calculator
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.8", label = "Number per group (n)",
+              min = 5, max = 100, step = 1, value = 25),
+  
+  sliderInput("es.8", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("ryx.8", label = "Correlation between outcome and covariate (ryx)",
+              min = -.9, max = .9, value = 0, step = 0.1)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.8, 
+                 n = input$n.8, 
+                 cov = "Yes",
+                 ryx = input$ryx.8,
+                 marklambda = TRUE)
+})
+```
+
+## Needed sample size for t-tests with covariates
+
+Recall that for the normal distribution, the useful relationship a function of the critical value. We can use the same strategy of rearrangement* 
+
+$$ n_z \approx \frac{2(z_{critical}-z_{\beta})^2\left(1-\rho_{yx}^2\right)}{\delta^2} $$ 
+
+Again, we can use the result from a normal approximation ($n_z$) as a start, then use that answer for the $df$ in a similar formula
+
+$$ n \approx \frac{2\left(t_{(2n_z-2-1)critical}-t_{(2n_z-2-1)\beta}\right)^2\left(1-\rho_{yx}^2\right)}{\delta^2} $$
+
+*note: $1 > \sqrt{(2n-3)/(2n-2)} > .95$ if $n \ge 6$, so we can ignore it to isolate a value for $n$
+
+## Minimum detectable effect size (MDES, uncorrelated covariate)
+
+We can again rearrange $\lambda$ for the effect size
+
+$$ \delta_m \approx \sqrt{\frac{2}{n}\frac{2n-2}{2n-3}}\left(1-\rho_{yx}^2\right)\left(t_{(2n-2)critical}-t_{(2n-2)\beta}\right) $$ 
+
+and since we are already planning on a sample size, we know the $df$, so no further approximation is necessary
+
+## Explore!
+
+```{r, echo = FALSE}
+inputPanel(
+  sliderInput("n.9", label = "Number per group (n)",
+              min = 5, max = 100, step = 1, value = 25),
+  
+  sliderInput("es.9", label = "Effect size (delta)",
+              min = 0.1, max = 1, value = .3, step = 0.1),
+  sliderInput("ryx.9", label = "Correlation between outcome and covariate (ryx)",
+              min = -.9, max = .9, value = 0, step = 0.1)
+  )
+
+renderPlot({
+  exactPowerPlot(type = "srs", es = input$es.9, 
+                 n = input$n.9, 
+                 cov = "Yes",
+                 ryx = input$ryx.9,
+                 marklambda = TRUE)
+})
+```
+
+[or use this app](https://hedbergec.shinyapps.io/powerClassApp/)

@@ -6,7 +6,7 @@ output:
   ioslides_presentation: 
     fig_retina: null
     highlight: pygments
-    incremental: yes
+    incremental: no
     smart: no
     transition: faster
     widescreen: yes
@@ -72,7 +72,7 @@ In other words, if you randomly assign $T$, it will not be highly correlated wit
 The _expected_ test statistic for ANCOVA, and the $\lambda$ to use in power is
 
 $$ \lambda = \underbrace{\frac{\left(\mu_1-\mu_0\right) - \phi_1\left(\bar{x}_1-\bar{x}_0\right)}{\sigma}}_\text{Adjusted Effect size}\underbrace{\sqrt{\frac{n}{2}\frac{2n-3}{2n-2}}}_\text{Sample size}\underbrace{\sqrt{1-\rho_{Tx}^2}}_\text{Multicolinearity}\underbrace{\sqrt{\frac{1}{\left(1-\rho_{yx}^2\right)}}}_\text{Covariate effect} $$
-but if there is no correlation between treatment and the covariate, $\mu_1-\mu_0 = 0$ and $\rho_{Tx} = 0$, we can work with 
+but if there is no correlation between treatment and the covariate, $\bar{x}_1-\bar{x}_0 = 0$ and thus $\rho_{Tx} = 0$, we can work with 
 
 $$ \lambda = \underbrace{\frac{\left(\mu_1-\mu_0\right)}{\sigma}}_\text{Effect size}\underbrace{\sqrt{\frac{n}{2}\frac{2n-3}{2n-2}}}_\text{Sample size}\underbrace{\sqrt{\frac{1}{\left(1-\rho_{yx}^2\right)}}}_\text{Covariate effect}$$
 
